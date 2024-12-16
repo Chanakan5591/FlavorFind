@@ -11,10 +11,10 @@
   "dependencies": {
     "@chakra-ui/react": "^3.2.3",
     "@emotion/react": "^11.14.0",
+    "@prisma/client": "^6.0.1",
     "@react-router/node": "^7.0.2",
     "@react-router/serve": "^7.0.2",
     "isbot": "^5.1.17",
-    "mongoose": "^8.9.0",
     "next-themes": "^0.4.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -23,6 +23,7 @@
     "remixicon": "^4.5.0"
   },
   "devDependencies": {
+    "@chakra-ui/cli": "^3.2.3",
     "@react-router/dev": "^7.0.2",
     "@t3-oss/env-core": "^0.11.1",
     "@types/node": "^20",
@@ -31,6 +32,7 @@
     "autoprefixer": "^10.4.20",
     "cross-env": "^7.0.3",
     "postcss": "^8.4.49",
+    "prisma": "^6.0.1",
     "typescript": "^5.7.2",
     "vite": "^5.4.11",
     "vite-tsconfig-paths": "^5.1.4",

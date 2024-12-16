@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+type CanteensBusyPeriods {
+  end   String
+  start String
+}
+
+type StoresMenu {
+  category    String
+  name        String
+  price       Float
+}
+
+type StoresOpeningHours {
+  dayOfWeek String
+  end       String
+  start     String
+}
+
+model canteens {
+  id                  String                @id @default(auto()) @map("_id") @db.ObjectId
+  busyPeriods         CanteensBusyPeriods[]
+  name                String
+  withAirConditioning Boolean
+  stores              stores[]
+}
+
+model stores {
+  id           String               @id @default(auto()) @map("_id") @db.ObjectId
+  canteenId   String                @db.ObjectId
+  canteen      canteens             @relation(fields: [canteenId], references: [id])
+  description  String
+  menu         StoresMenu[]
+  name         String
+  openingHours StoresOpeningHours[]
+}

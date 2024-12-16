@@ -12,6 +12,7 @@ import { Provider } from '~/components/ui/provider'
 import { ColorModeProvider } from "./components/ui/color-mode";
 import 'remixicon/fonts/remixicon.css'
 import Navbar from "./components/navbar";
+import './global.css'
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -28,9 +29,7 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" style={{
-        backgroundColor: '#fbf7ef'
-      }}>
+    <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

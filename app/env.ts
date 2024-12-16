@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 export const env = createEnv({
     server: {
-        MONGO_URL: z.string().url(),
+        DATABASE_URL: z.string().url(),
     },
     clientPrefix: "VITE_",
     client: {

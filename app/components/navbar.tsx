@@ -21,14 +21,20 @@ export default function Navbar() {
               display="flex"
               alignItems="baseline"
             >
-              <Box as="span" color="gray.800">
-                FlavorFin
+              <Box as="span" color={{ base: 'orange.600', _dark: 'orange.400' }}>
+                Flavor
               </Box>
-              <Box as="span" color="gray.800" ml="1px" mt="2px">
+              <Box as="span" color={{ base: 'brown.800', _dark: 'green.400' }}>
+                Fin
+              </Box>
+              <Box as="span" color={{ base: 'brown.800', _dark: 'green.400' }} ml="1px" mt="2px">
                 <Box
                   as="span"
                   borderBottom="2px solid"
-                  borderColor="orange.400"
+                  borderColor={{
+                    base: 'green.600',
+                    _dark: 'green.400',
+                  }}
                 >
                   d
                 </Box>
