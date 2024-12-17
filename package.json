@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "cross-env NODE_ENV=production react-router build && node vercel/prepare.js",
+    "postinstall": "prisma generate",
     "dev": "react-router dev",
     "start": "cross-env NODE_ENV=production react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc"
@@ -11,9 +12,7 @@
   "dependencies": {
     "@chakra-ui/react": "^3.2.3",
     "@emotion/react": "^11.14.0",
-    "@hiogawa/vite-node-miniflare": "^0.1.1",
     "@prisma/client": "^6.0.1",
-    "@prisma/extension-accelerate": "^1.2.1",
     "@react-router/node": "^7.0.2",
     "@react-router/serve": "^7.0.2",
     "express": "^4.21.2",
