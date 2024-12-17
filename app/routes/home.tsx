@@ -44,7 +44,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     itemToValue: (canteen: CanteenWithStores) => canteen.id
   });
 
-  const [selectedCafeteria, setCafeteria] = useState([])
+  const [selectedCafeteria, setCafeteria] = useState([""])
   const [priceRange, setPriceRange] = useState([1, 100])
 
   return (
