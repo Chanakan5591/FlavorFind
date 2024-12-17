@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 
 export default function Navbar() {
   return (
-    <Box px={4}>
+    <Box px={4} colorPalette='brand'>
       <Flex h={16} alignItems={'center'} justifyContent={'space-between'}>
         {/* Left Placeholder (Invisible) */}
         <Box w="auto" visibility="hidden">
@@ -21,18 +21,18 @@ export default function Navbar() {
               display="flex"
               alignItems="baseline"
             >
-              <Box as="span" color={{ base: 'orange.600', _dark: 'orange.400' }}>
+              <Box as="span" color={{ base: 'colorPalette.fg', _dark: 'orange.400' }}>
                 Flavor
               </Box>
-              <Box as="span" color={{ base: 'brown.800', _dark: 'green.400' }}>
+              <Box as="span" color={{ base: 'colorPalette.emphasized', _dark: 'green.400' }}>
                 Fin
               </Box>
-              <Box as="span" color={{ base: 'brown.800', _dark: 'green.400' }} ml="1px" mt="2px">
+              <Box as="span" color={{ base: 'colorPalette.emphasized', _dark: 'green.400' }} ml="1px" mt="2px">
                 <Box
                   as="span"
                   borderBottom="2px solid"
                   borderColor={{
-                    base: 'green.600',
+                    base: 'accent.fg',
                     _dark: 'green.400',
                   }}
                 >
@@ -44,7 +44,7 @@ export default function Navbar() {
         </Flex>
 
         {/* Right-aligned Button */}
-        <Button size={'sm'}>
+        <Button size={'sm'} colorPalette='accent'>
           Find New Flavors
         </Button>
       </Flex>

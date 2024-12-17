@@ -48,10 +48,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const [priceRange, setPriceRange] = useState([1, 100])
 
   return (
-    <Box padding={8}>
+    <Box padding={8} colorPalette='brand'>
       <HStack alignItems={'center'} gap={6}>
         <Box width='full' height={24}>
-          <SelectRoot collection={canteens_collection} value={selectedCafeteria} onValueChange={({ value }) => setCafeteria(value)}>
+          <SelectRoot collection={canteens_collection} value={selectedCafeteria} onValueChange={({ value }) => setCafeteria(value)} rounded='2xl' variant='subtle'>
             <SelectLabel>Select Cafeteria</SelectLabel>
             <SelectTrigger clearable>
               <SelectValueText placeholder="โรงอาหาร" />

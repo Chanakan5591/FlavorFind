@@ -42,14 +42,14 @@ export default function CafeteriaList({
         <Grid gap={4}>
             {canteens.map((canteen) => (
                 <GridItem key={canteen.id}>
-                    <Card.Root width='full'>
+                    <Card.Root width='full' bg='#f8f6f2'>
                         <Card.Body gap="2">
                             <Card.Title mt="2">{canteen.name}</Card.Title>
                             <Grid gap={4} templateColumns='repeat(2, 1fr)'>
                                 {canteen.stores && canteen.stores.length > 0 ? (
                                     canteen.stores.map((store) => (
                                         <GridItem key={store.id}>
-                                            <Card.Root width="full">
+                                            <Card.Root width="full" bg='#f2efeb'>
                                                 <Card.Body gap="2">
                                                     <Card.Title mt="2">{store.name}</Card.Title>
                                                     <Card.Description>

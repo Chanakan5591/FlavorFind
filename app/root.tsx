@@ -13,6 +13,8 @@ import { ColorModeProvider } from "./components/ui/color-mode";
 import 'remixicon/fonts/remixicon.css'
 import Navbar from "./components/navbar";
 import './global.css'
+import { Box } from "@chakra-ui/react";
+import { system } from "theme";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -36,7 +38,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body> 
+      <body>
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -47,12 +49,47 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-  <Provider>
-    <ColorModeProvider>
-      <Navbar />
-      <Outlet />
-    </ColorModeProvider>
-  </Provider>);
+    <Provider>
+      <ColorModeProvider>
+        <Box
+          css={{
+            position: 'relative', // Needed for positioning the pseudo-element
+            width: '100%',
+            height: '400px',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: 'full',
+              minH: '100svh',
+              zIndex: -1, // Place it behind the content
+              bgGradient: 'to-br', // Your background gradient (or solid color)
+              gradientFrom: '#eed7c4',
+              gradientTo: '#e8cab0',
+              filter: 'url(#noiseFilter)', // Apply the SVG filter
+            },
+          }}
+        >
+
+
+          <svg xmlns="http://www.w3.org/2000/svg" style={{ position: 'absolute', top: 0, left: 0, width: 0, height: 0 }}>
+            <filter id="noiseFilter">
+              <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="4" seed="15" stitchTiles="stitch" result="turbulence" />
+              <feComponentTransfer in="turbulence" result="darkenedNoise">
+                <feFuncR type="linear" slope="0.1" intercept="0" />
+                <feFuncG type="linear" slope="0.1" intercept="0" />
+                <feFuncB type="linear" slope="0.1" intercept="0" />
+              </feComponentTransfer>
+              <feComposite in="SourceGraphic" in2="darkenedNoise" operator="in" />
+            </filter>
+          </svg>
+
+          <Navbar />
+          <Outlet />
+        </Box>
+      </ColorModeProvider>
+    </Provider>);
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
