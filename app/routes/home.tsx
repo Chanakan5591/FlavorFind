@@ -57,7 +57,7 @@ export async function action({
   const clientIP = getClientIPAddress(request)
   const fingerprint = hmac.split(":")[0]
 
-  const requestAllowed = await rateLimiterService.handleTokenBucketRequest(fingerprint, clientIP ?? '2.2.2.2')
+  const requestAllowed = await rateLimiterService.handleTokenBucketRequest(fingerprint, clientIP ?? '')
 
   if (!requestAllowed) {
     return { ok: false, status: 429, body: "Rate limit exceeded" }
