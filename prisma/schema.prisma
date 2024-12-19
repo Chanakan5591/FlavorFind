@@ -36,8 +36,19 @@ model stores {
   id           String               @id @default(auto()) @map("_id") @db.ObjectId
   canteenId   String                @db.ObjectId
   canteen      canteens             @relation(fields: [canteenId], references: [id])
+  ratings      storeRatings[]
   description  String
   menu         StoresMenu[]
   name         String
   openingHours StoresOpeningHours[]
+}
+
+model storeRatings {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  storeId String  @db.ObjectId
+  store   stores @relation(fields: [storeId], references: [id])
+  clientFingerprint String
+  rating  Float
+
+  @@unique([storeId, clientFingerprint])
 }

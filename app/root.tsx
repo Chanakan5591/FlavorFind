@@ -15,6 +15,7 @@ import Navbar from "./components/navbar";
 import './global.css'
 import { Box } from "@chakra-ui/react";
 import { system } from "theme";
+import { Toaster } from "./components/ui/toaster";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -51,6 +52,7 @@ export default function App() {
   return (
     <Provider>
       <ColorModeProvider>
+        <Toaster />
         <Box
           css={{
             position: 'relative', // Needed for positioning the pseudo-element

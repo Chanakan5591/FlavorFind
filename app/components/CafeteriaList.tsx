@@ -1,46 +1,54 @@
-<Card.Root width='full'>
-    <Card.Body gap="2">
-        <Card.Title mt="2">Nue Camp</Card.Title>
-        <Card.Description>
-            This is the card body. Lorem ipsum dolor sit amet, consectetur
-            adipiscing elit. Curabitur nec odio vel dui euismod fermentum.
-            Curabitur nec odio vel dui euismod fermentum.
-        </Card.Description>
-    </Card.Body>
-    <Card.Footer justifyContent="flex-end">
-        <Button variant="outline">View</Button>
-        <Button>Join</Button>
-    </Card.Footer>
-</Card.Root>
 import { Box, Card, Grid, GridItem, HStack } from "@chakra-ui/react";
 import type { CanteenWithStores } from "~/types";
 import { Button } from "./ui/button";
+import ReviewStars from "./ReviewStars";
 
 export default function CafeteriaList({
     selectedCafeteria,
     priceRange,
-    canteens
+    canteens,
+    onUserRatingChange,
+    clientFingerprint
 }: {
-    selectedCafeteria: string;
+    selectedCafeteria?: string;
     priceRange: number[];
-    canteens: CanteenWithStores[]
+    canteens: CanteenWithStores[];
+    onUserRatingChange: (storeId: string, newRating: number) => void;
+    clientFingerprint: string;
 }) {
+    type Canteen = typeof canteens[number];
 
-    // filter canteens by their id, select everything if selectedCafeteria is empty
-    canteens = canteens.filter((canteen) => !selectedCafeteria || canteen.id === selectedCafeteria)
+    type StoreWithRating = Canteen["stores"][number] & {
+        userStoreRating: number;
+    };
 
-    // filter menu by price range
-    canteens = canteens.map((canteen) => ({
-        ...canteen,
-        stores: canteen.stores.map((store) => ({
-            ...store,
-            menu: store.menu.filter((menu) => menu.price >= priceRange[0] && menu.price <= priceRange[1])
-        }))
-    }))
+    type CanteenWithRating = Omit<Canteen, "stores"> & {
+        stores: StoreWithRating[];
+    };
+
+    // add userStoreRating to each store
+    const filteredCanteens: CanteenWithRating[] = canteens
+        .filter((canteen) => !selectedCafeteria || canteen.id === selectedCafeteria)
+        .map((canteen) => ({
+            ...canteen,
+            stores: canteen.stores.map((store) => {
+                const userRating = store.ratings.find(
+                    (rating) => rating.clientFingerprint === clientFingerprint
+                )?.rating;
+
+                return {
+                    ...store,
+                    menu: store.menu.filter(
+                        (menu) => menu.price >= priceRange[0] && menu.price <= priceRange[1]
+                    ),
+                    userStoreRating: userRating ?? 0, // Add the calculated field
+                };
+            }),
+        }));
 
     return (
         <Grid gap={4}>
-            {canteens.map((canteen) => (
+            {filteredCanteens.map((canteen) => (
                 <GridItem key={canteen.id}>
                     <Card.Root width='full' bg='#f8f6f2'>
                         <Card.Body gap="2">
@@ -51,7 +59,12 @@ export default function CafeteriaList({
                                         <GridItem key={store.id}>
                                             <Card.Root width="full" bg='#f2efeb'>
                                                 <Card.Body gap="2">
-                                                    <Card.Title mt="2">{store.name}</Card.Title>
+                                                    <Card.Title mt="2" display='flex' justifyContent='space-between'>
+                                                        {store.name}
+                                                        <Box>
+                                                            <ReviewStars averageRating={Math.round((store.ratings.reduce((sum, value) => sum + value.rating, 0) / store.ratings.length) * 100) / 100} userRating={store.userStoreRating} storeId={store.id} onRatingChange={(newRating: number) => onUserRatingChange(store.id, newRating)} />
+                                                        </Box>
+                                                    </Card.Title>
                                                     <Card.Description>
                                                         {store.description}
                                                     </Card.Description>

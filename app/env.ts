@@ -4,6 +4,7 @@ import { z } from 'zod'
 export const env = createEnv({
     server: {
         DATABASE_URL: z.string().url(),
+        HMAC_SECRET_KEY: z.string(),
     },
     clientPrefix: "VITE_",
     client: {

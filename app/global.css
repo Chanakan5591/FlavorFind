@@ -6,3 +6,19 @@ html.dark {
     background-color: #1a1a1a;
     color: #ffffff;
 }
+
+.avg-star {
+    color: #f1de9a;
+    /* Bright yellow for user rating */
+}
+
+.user-star {
+    color: #f5c518;
+    /* Bright yellow for user rating */
+    transition: color 0.2s ease-in-out;
+}
+
+.user-star:hover {
+    color: #ffc107;
+    /* Brighter yellow on hover */
+}

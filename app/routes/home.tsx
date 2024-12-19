@@ -13,8 +13,14 @@ import {
   SelectValueText,
 } from "~/components/ui/select"
 import { Slider } from "~/components/ui/slider";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NumberInputField, NumberInputRoot } from "~/components/ui/number-input";
+import { useFetcher, useSubmit } from "react-router";
+import FingerprintJS from "@fingerprintjs/fingerprintjs";
+import { useCookies } from 'react-cookie'
+import { verifyClientString } from "~/util/hmac.server";
+import { toaster } from "~/components/ui/toaster";
+import { useFetcherQueueWithPromise } from "~/hooks/MagicFetcher";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -27,15 +33,64 @@ export function meta({ }: Route.MetaArgs) {
 export async function loader({ context }: Route.LoaderArgs) {
   const canteens = await prisma.canteens.findMany({
     include: {
-      stores: true
+      stores: {
+        include: {
+          ratings: true
+        }
+      }
     }
   });
 
   return canteens;
 }
 
+export async function action({
+  request,
+}: Route.ActionArgs) {
+  let formData = await request.formData();
+  let storeId = await formData.get("storeId");
+  let newUserRating = await formData.get("newRating");
+  let hmac = await formData.get("hmac") as string;
+
+  // decode HMAC by splitting it by colon, fingerprintingId, hmac, and nonce
+  // then verify the HMAC by generating HMAC from fingerprintId and nonce
+  const hmac_validated = verifyClientString(hmac)
+
+  if (!hmac_validated) {
+    return { ok: false, status: 401, body: "Invalid HMAC" }
+  }
+
+  const ratings = await prisma.storeRatings.upsert({
+    where: {
+      storeId_clientFingerprint: {
+        storeId: storeId as string,
+        clientFingerprint: hmac.split(":")[0]
+      }
+    },
+    update: {
+      rating: parseFloat(newUserRating as string),
+    },
+    create: {
+      storeId: storeId as string,
+      rating: parseFloat(newUserRating as string),
+      clientFingerprint: hmac.split(":")[0]
+    },
+    include: {
+      store: {
+        include: {
+          ratings: true
+        }
+      }
+    }
+  });
+
+  return { ok: true, new_store: ratings.store };
+}
+
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const canteens = loaderData as CanteenWithStores[];
+  const canteensData = loaderData as CanteenWithStores[];
+
+  const [canteens, setCanteens] = useState(canteensData);
 
   // use createListCollection function to extract name from all element in canteens list
   const canteens_collection = createListCollection({
@@ -46,6 +101,81 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   const [selectedCafeteria, setCafeteria] = useState([""])
   const [priceRange, setPriceRange] = useState([1, 100])
+  const [cookies, setCookie] = useCookies(['nomnom', 'science'])
+
+  const [firstTime, setFirstTime] = useState(false)
+  const [clientFingerprint, setClientFingerprint] = useState("")
+
+  let hmacFetcher = useFetcher()
+  let ratingFetcher = useFetcherQueueWithPromise()
+
+  useEffect(() => {
+    if (cookies['nomnom']) {
+      setClientFingerprint(cookies['nomnom'].split(":")[0])
+    }
+  }, [cookies['nomnom']])
+
+  useEffect(() => {
+    if (!cookies['nomnom']) {
+      setFirstTime(true)
+      FingerprintJS.load().then(fp => {
+        fp.get().then(result => {
+          hmacFetcher.submit(
+            { fingerprint: result.visitorId },
+            { method: "POST", action: "/api/science/new_experiment" }
+          )
+        })
+      })
+    }
+  }, [])
+
+  useEffect(() => {
+    if (firstTime && hmacFetcher.state === "idle") {
+      if (hmacFetcher.data) {
+        const hmac = hmacFetcher.data.hmac as string
+        setCookie('nomnom', hmac, { path: '/', sameSite: 'strict' })
+        setFirstTime(false)
+      }
+    }
+  }, [hmacFetcher.state])
+
+  useEffect(() => {
+    if (ratingFetcher.state === "idle") {
+      if (ratingFetcher.data) {
+        const updatedStore = ratingFetcher.data as any
+        const updatedCanteens = canteens.map(canteen => {
+          if (canteen.id === updatedStore.id) {
+            return updatedStore
+          }
+          return canteen
+        })
+        setCanteens(updatedCanteens)
+      }
+    }
+  }, [ratingFetcher.state])
+
+  const onUserRatingChange = async (storeId: string, newRating: number) => {
+    const ratingSubmissionPromise = ratingFetcher.enqueueSubmit(
+      { storeId: storeId, newRating: newRating, hmac: cookies['nomnom'] },
+      { method: "POST" }
+    )
+
+    toaster.promise(ratingSubmissionPromise, {
+      success: {
+        title: "Rating updated",
+        description: "Your rating has been updated successfully",
+      },
+      loading: {
+        title: "Updating rating",
+        description: "Please wait while we update your rating",
+      },
+      error: {
+        title: "An error occurred",
+        description: "We couldn't update your rating, please try again later",
+      },
+    })
+  }
+
 
   return (
     <Box padding={8} colorPalette='brand'>
@@ -72,7 +202,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           ]} />
         </Box>
       </HStack>
-      <CafeteriaList canteens={canteens} priceRange={priceRange} selectedCafeteria={selectedCafeteria[0]} />
+      <CafeteriaList canteens={canteens} priceRange={priceRange} selectedCafeteria={selectedCafeteria[0]} onUserRatingChange={onUserRatingChange} clientFingerprint={clientFingerprint} />
     </Box>
   )
 }
