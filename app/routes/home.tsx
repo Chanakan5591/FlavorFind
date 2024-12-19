@@ -21,6 +21,8 @@ import { useCookies } from 'react-cookie'
 import { verifyClientString } from "~/util/hmac.server";
 import { toaster } from "~/components/ui/toaster";
 import { useFetcherQueueWithPromise } from "~/hooks/MagicFetcher";
+import { getClientIPAddress } from "~/util/ip.server";
+import { rateLimiterService } from "~/util/ratelimit.server";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -51,6 +53,15 @@ export async function action({
   let storeId = await formData.get("storeId");
   let newUserRating = await formData.get("newRating");
   let hmac = await formData.get("hmac") as string;
+
+  const clientIP = getClientIPAddress(request)
+  const fingerprint = hmac.split(":")[0]
+
+  const requestAllowed = await rateLimiterService.handleTokenBucketRequest(fingerprint, clientIP ?? '2.2.2.2')
+
+  if (!requestAllowed) {
+    return { ok: false, status: 429, body: "Rate limit exceeded" }
+  }
 
   // decode HMAC by splitting it by colon, fingerprintingId, hmac, and nonce
   // then verify the HMAC by generating HMAC from fingerprintId and nonce

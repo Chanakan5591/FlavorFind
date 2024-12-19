@@ -59,7 +59,7 @@ export function useFetcherQueueWithPromise() {
       resolveRef.current(fetcher.data);
       resolveRef.current = null;
       rejectRef.current = null;
-    } else if (fetcher.state === "idle" && !fetcher.data && rejectRef.current) {
+    } else if ((fetcher.state === "idle" && !fetcher.data && rejectRef.current) || (fetcher.data && !fetcher.data.ok && rejectRef.current)) {
       setCurrentData(null);
       setCurrentError("There was a problem processing the request.");
       rejectRef.current(new Error("There was a problem processing the request."));

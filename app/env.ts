@@ -5,6 +5,7 @@ export const env = createEnv({
     server: {
         DATABASE_URL: z.string().url(),
         HMAC_SECRET_KEY: z.string(),
+        REDIS_URL: z.string().url().startsWith("rediss://")
     },
     clientPrefix: "VITE_",
     client: {
