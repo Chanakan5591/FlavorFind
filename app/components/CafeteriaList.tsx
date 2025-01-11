@@ -53,7 +53,7 @@ export default function CafeteriaList({
                     <Card.Root width='full' bg='#f8f6f2'>
                         <Card.Body gap="2">
                             <Card.Title mt="2">{canteen.name}</Card.Title>
-                            <Grid gap={4} templateColumns='repeat(2, 1fr)'>
+                            <Grid gap={4} templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}>
                                 {canteen.stores && canteen.stores.length > 0 ? (
                                     canteen.stores.map((store) => (
                                         <GridItem key={store.id}>

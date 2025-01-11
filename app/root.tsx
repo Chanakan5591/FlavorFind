@@ -57,7 +57,7 @@ export default function App() {
           css={{
             position: 'relative', // Needed for positioning the pseudo-element
             width: '100%',
-            height: '400px',
+            height: '100%',
             '&::before': {
               content: '""',
               position: 'absolute',
@@ -65,6 +65,7 @@ export default function App() {
               left: 0,
               width: 'full',
               minH: '100svh',
+              height: '100%',
               zIndex: -1, // Place it behind the content
               bgGradient: 'to-br', // Your background gradient (or solid color)
               gradientFrom: '#eed7c4',

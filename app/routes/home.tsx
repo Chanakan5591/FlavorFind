@@ -1,4 +1,4 @@
-import { Box, Button, createListCollection, HStack } from "@chakra-ui/react";
+import { Box, Button, createListCollection, HStack, Stack } from "@chakra-ui/react";
 import type { Route } from "./+types/home";
 import prisma from "~/db.server";
 import CafeteriaList from "~/components/CafeteriaList";
@@ -14,7 +14,6 @@ import {
 } from "~/components/ui/select"
 import { Slider } from "~/components/ui/slider";
 import { useEffect, useState } from "react";
-import { NumberInputField, NumberInputRoot } from "~/components/ui/number-input";
 import { useFetcher, useSubmit } from "react-router";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import { useCookies } from 'react-cookie'
@@ -190,7 +189,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   return (
     <Box padding={8} colorPalette='brand'>
-      <HStack alignItems={'center'} gap={6}>
+      <Stack alignItems={'center'} gap={{md: 6}} direction={{md: 'row', base: 'column'}} mb={{md: 0, base: 4}}>
         <Box width='full' height={24}>
           <SelectRoot collection={canteens_collection} value={selectedCafeteria} onValueChange={({ value }) => setCafeteria(value)} rounded='2xl' variant='subtle'>
             <SelectLabel>Select Cafeteria</SelectLabel>
@@ -212,7 +211,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             { value: 100, label: '฿300' }
           ]} />
         </Box>
-      </HStack>
+      </Stack>
       <CafeteriaList canteens={canteens} priceRange={priceRange} selectedCafeteria={selectedCafeteria[0]} onUserRatingChange={onUserRatingChange} clientFingerprint={clientFingerprint} />
     </Box>
   )

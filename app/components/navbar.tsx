@@ -8,7 +8,7 @@ export default function Navbar() {
         {/* Left Placeholder (Invisible) */}
         <Box w="auto" visibility="hidden">
           <Button size={'sm'} disabled={true}>
-            Find New Flavors
+            Find Flavors!
           </Button>
         </Box>
 
@@ -45,7 +45,7 @@ export default function Navbar() {
 
         {/* Right-aligned Button */}
         <Button size={'sm'} colorPalette='accent'>
-          Find New Flavors
+          Find Flavors!
         </Button>
       </Flex>
     </Box>
