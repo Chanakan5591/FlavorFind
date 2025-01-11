@@ -1,12 +1,23 @@
+
+@font-face {
+    font-family: 'LINE Seed TH';
+    src: url('/typeface/LINESeedSansTH_W_Rg.woff2') format('woff2');
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'LINE Seed TH';
+    src: url('/typeface/LINESeedSansTH_W_Bd.woff2') format('woff2');
+    font-weight: 700;
+    font-display: swap;
+}
+
 html {
     color: #333;
+    font-family: 'LINE Seed TH', sans-serif;
 }
-
-html.dark {
-    background-color: #1a1a1a;
-    color: #ffffff;
-}
-
+o
 .avg-star {
     color: #f1de9a;
     /* Bright yellow for user rating */

@@ -27,13 +27,18 @@ export default function Navbar() {
               <Box as="span" color={{ base: 'colorPalette.emphasized', _dark: 'green.400' }}>
                 Fin
               </Box>
-              <Box as="span" color={{ base: 'colorPalette.emphasized', _dark: 'green.400' }} ml="1px" mt="2px">
+              <Box as="span" color={{ base: 'colorPalette.emphasized', _dark: 'green.400' }}>
                 <Box
                   as="span"
-                  borderBottom="2px solid"
-                  borderColor={{
-                    base: 'accent.fg',
-                    _dark: 'green.400',
+                  position="relative"
+                  _after={{
+                    content: '""',
+                    position: "absolute",
+                    bottom: "2px", // Fine-tune the position
+                    left: 0,
+                    width: "100%",
+                    height: "2px",
+                    backgroundColor: { base: 'accent.fg', _dark: 'green.400' },
                   }}
                 >
                   d

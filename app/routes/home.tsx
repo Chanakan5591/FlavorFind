@@ -1,4 +1,4 @@
-import { Box, Button, createListCollection, HStack, Stack } from "@chakra-ui/react";
+import { Box, Button, createListCollection, HStack, Stack, useDisclosure, Skeleton } from "@chakra-ui/react";
 import type { Route } from "./+types/home";
 import prisma from "~/db.server";
 import CafeteriaList from "~/components/CafeteriaList";
@@ -13,7 +13,7 @@ import {
   SelectValueText,
 } from "~/components/ui/select"
 import { Slider } from "~/components/ui/slider";
-import { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useFetcher, useSubmit } from "react-router";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import { useCookies } from 'react-cookie'
@@ -22,6 +22,7 @@ import { toaster } from "~/components/ui/toaster";
 import { useFetcherQueueWithPromise } from "~/hooks/MagicFetcher";
 import { getClientIPAddress } from "~/util/ip.server";
 import { rateLimiterService } from "~/util/ratelimit.server";
+import { atom, useAtom } from "jotai";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -97,17 +98,24 @@ export async function action({
   return { ok: true, new_store: ratings.store };
 }
 
+const MemoizedSelectRoot = React.memo(SelectRoot);
+
+// Jotai atom for loading state
+const isLoadingAtom = atom(false);
+
 export default function Home({ loaderData }: Route.ComponentProps) {
   const canteensData = loaderData as CanteenWithStores[];
 
   const [canteens, setCanteens] = useState(canteensData);
+  const [isLoading, setIsLoading] = useAtom(isLoadingAtom);
 
-  // use createListCollection function to extract name from all element in canteens list
-  const canteens_collection = createListCollection({
-    items: canteens,
-    itemToString: (canteen: CanteenWithStores) => canteen.name,
-    itemToValue: (canteen: CanteenWithStores) => canteen.id
-  });
+  const canteens_collection = useMemo(() => {
+    return createListCollection({
+      items: canteens,
+      itemToString: (canteen: CanteenWithStores) => canteen.name,
+      itemToValue: (canteen: CanteenWithStores) => canteen.id
+    });
+  }, [canteens])
 
   const [selectedCafeteria, setCafeteria] = useState([""])
   const [priceRange, setPriceRange] = useState([1, 100])
@@ -150,19 +158,27 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   }, [hmacFetcher.state])
 
   useEffect(() => {
-    if (ratingFetcher.state === "idle") {
-      if (ratingFetcher.data) {
-        const updatedStore = ratingFetcher.data as any
-        const updatedCanteens = canteens.map(canteen => {
-          if (canteen.id === updatedStore.id) {
-            return updatedStore
+    if (ratingFetcher.state === "idle" && ratingFetcher.data) {
+      const updatedStore = ratingFetcher.data.new_store as any;
+
+      setCanteens(prevCanteens =>
+        prevCanteens.map(canteen => {
+          if (canteen.id === updatedStore.store.canteenId) {
+            return {
+              ...canteen,
+              stores: canteen.stores.map(store => {
+                if (store.id === updatedStore.id) {
+                  return updatedStore;
+                }
+                return store;
+              })
+            }
           }
-          return canteen
+          return canteen;
         })
-        setCanteens(updatedCanteens)
-      }
+      );
     }
-  }, [ratingFetcher.state])
+  }, [ratingFetcher.state, ratingFetcher.data]);
 
   const onUserRatingChange = async (storeId: string, newRating: number) => {
     const ratingSubmissionPromise = ratingFetcher.enqueueSubmit(
@@ -186,12 +202,24 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     })
   }
 
+  const handlePriceRangeChange = useCallback((value: number[]) => {
+    setIsLoading(true);
+    setPriceRange(value);
+  }, []);
+
+  const handleCafeteriaChange = useCallback((value: string[]) => {
+    setCafeteria(value);
+  }, []);
+
+  const handleSliderMouseUp = useCallback(() => {
+    setIsLoading(false);
+  }, []);
 
   return (
     <Box padding={8} colorPalette='brand'>
-      <Stack alignItems={'center'} gap={{md: 6}} direction={{md: 'row', base: 'column'}} mb={{md: 0, base: 4}}>
-        <Box width='full' height={24}>
-          <SelectRoot collection={canteens_collection} value={selectedCafeteria} onValueChange={({ value }) => setCafeteria(value)} rounded='2xl' variant='subtle'>
+      <Stack alignItems={'center'} gap={{ md: 6 }} direction={{ md: 'row', base: 'column' }} mb={{ md: 0, base: 4 }}>
+        <Box width='full' height={20}>
+          <SelectRoot readOnly={isLoading} collection={canteens_collection} value={selectedCafeteria} onValueChange={({ value }) => handleCafeteriaChange(value)} rounded='2xl' variant='subtle'>
             <SelectLabel>Select Cafeteria</SelectLabel>
             <SelectTrigger clearable>
               <SelectValueText placeholder="โรงอาหาร" />
@@ -206,13 +234,17 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </SelectRoot>
         </Box>
         <Box width='full'>
-          <Slider label='Specify Price Range' defaultValue={[1, 100]} value={priceRange} onValueChange={({ value }) => setPriceRange(value)} width='full' marks={[
+          <Slider readOnly={isLoading} onValueChangeEnd={handleSliderMouseUp} label='Specify Price Range' defaultValue={[1, 100]} value={priceRange} onValueChange={({ value }) => handlePriceRangeChange(value)} width='full' marks={[
             { value: 0, label: '฿5' },
             { value: 100, label: '฿300' }
           ]} />
         </Box>
       </Stack>
-      <CafeteriaList canteens={canteens} priceRange={priceRange} selectedCafeteria={selectedCafeteria[0]} onUserRatingChange={onUserRatingChange} clientFingerprint={clientFingerprint} />
+      {isLoading ? (
+        <Skeleton height="500px" />
+      ) : (
+        <CafeteriaList canteens={canteens} priceRange={priceRange} selectedCafeteria={selectedCafeteria[0]} onUserRatingChange={onUserRatingChange} clientFingerprint={clientFingerprint} />
+      )}
     </Box>
   )
 }

@@ -67,10 +67,7 @@ export default function App() {
               minH: '100svh',
               height: '100%',
               zIndex: -1, // Place it behind the content
-              bgGradient: 'to-br', // Your background gradient (or solid color)
-              gradientFrom: '#eed7c4',
-              gradientTo: '#e8cab0',
-              filter: 'url(#noiseFilter)', // Apply the SVG filter
+              background: "#e8e8e8"
             },
           }}
         >

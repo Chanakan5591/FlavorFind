@@ -3,24 +3,14 @@ import autoprefixer from "autoprefixer";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-export default defineConfig(({ isSsrBuild, command }) => ({
-  build: {
-    rollupOptions: isSsrBuild
-      ? {
-        input: "./server/app.ts"
-      }
-      : undefined,
-  },
+export default defineConfig({
   css: {
     postcss: {
       plugins: [autoprefixer],
     },
   },
-  ssr: {
-    noExternal: command === 'build' ? true : undefined
-  },
   plugins: [
     reactRouter(),
     tsconfigPaths()
   ],
-}));
+});
