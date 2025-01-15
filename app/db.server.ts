@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client/index.js'
+import { PrismaClient } from '@prisma/ffdb'
 import { env } from './env'
 
 const prisma = new PrismaClient()
