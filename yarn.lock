@@ -1541,23 +1541,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-router/express@npm:7.0.2":
-  version: 7.0.2
-  resolution: "@react-router/express@npm:7.0.2"
+"@react-router/express@npm:7.1.2-pre.0":
+  version: 7.1.2-pre.0
+  resolution: "@react-router/express@npm:7.1.2-pre.0"
   dependencies:
-    "@react-router/node": "npm:7.0.2"
+    "@react-router/node": "npm:7.1.2-pre.0"
   peerDependencies:
     express: ^4.17.1
-    react-router: 7.0.2
+    react-router: 7.1.2-pre.0
     typescript: ^5.1.0
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10c0/5fe2319502d19c48127aa1936f5260e591f52c714c9ea4a5c81f5c6def1ed265ee83e01213212b4da9ab283a630d90e170c8218069d1452ca657514b2c87302a
+  checksum: 10c0/3f8e247fca31296828f0f3ab05d5c43ca5d005d495803b8be594084de0b0fbba048d8ea7f93cb0eca9969078af3478462fb19a855fdb634cfa386a6ba1f087f0
   languageName: node
   linkType: hard
 
-"@react-router/node@npm:7.0.2, @react-router/node@npm:^7.0.2":
+"@react-router/node@npm:7.0.2":
   version: 7.0.2
   resolution: "@react-router/node@npm:7.0.2"
   dependencies:
@@ -1575,22 +1575,40 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-router/serve@npm:^7.0.2":
-  version: 7.0.2
-  resolution: "@react-router/serve@npm:7.0.2"
+"@react-router/node@npm:7.1.2-pre.0":
+  version: 7.1.2-pre.0
+  resolution: "@react-router/node@npm:7.1.2-pre.0"
   dependencies:
-    "@react-router/express": "npm:7.0.2"
-    "@react-router/node": "npm:7.0.2"
+    "@mjackson/node-fetch-server": "npm:^0.2.0"
+    source-map-support: "npm:^0.5.21"
+    stream-slice: "npm:^0.1.2"
+    undici: "npm:^6.19.2"
+  peerDependencies:
+    react-router: 7.1.2-pre.0
+    typescript: ^5.1.0
+  peerDependenciesMeta:
+    typescript:
+      optional: true
+  checksum: 10c0/abedebb032982351a1dabd89853c0eebc2b80fdc0d92bae36e2b84b848d2b5af0080d9759ef5cf18d0d469ee485733162376ea04335f1ef84b128f2de212b684
+  languageName: node
+  linkType: hard
+
+"@react-router/serve@npm:7.1.2-pre.0":
+  version: 7.1.2-pre.0
+  resolution: "@react-router/serve@npm:7.1.2-pre.0"
+  dependencies:
+    "@react-router/express": "npm:7.1.2-pre.0"
+    "@react-router/node": "npm:7.1.2-pre.0"
     compression: "npm:^1.7.4"
     express: "npm:^4.19.2"
     get-port: "npm:5.1.1"
     morgan: "npm:^1.10.0"
     source-map-support: "npm:^0.5.21"
   peerDependencies:
-    react-router: 7.0.2
+    react-router: 7.1.2-pre.0
   bin:
     react-router-serve: bin.js
-  checksum: 10c0/76a4edb7838bb24d4a2e4ba2d33ed92b6b2b50a3de8e4d8cc1a04e45fdd672d89ef428bed48a4122bccfe5e2345c8da9e96968427bf466ec4c48fc67be0149fd
+  checksum: 10c0/1a5ead16b1045ffb19d7cc28a52ba11984ddcd891b0aef1e13156585d17789a2d577d71a6311bb1348beb94bfe669f7ea30533ff6054d8139bb58fabc036abee
   languageName: node
   linkType: hard
 
@@ -3945,8 +3963,8 @@ __metadata:
     "@fingerprintjs/fingerprintjs": "npm:^4.5.1"
     "@prisma/client": "npm:^6.0.1"
     "@react-router/dev": "npm:^7.0.2"
-    "@react-router/node": "npm:^7.0.2"
-    "@react-router/serve": "npm:^7.0.2"
+    "@react-router/node": "npm:7.1.2-pre.0"
+    "@react-router/serve": "npm:7.1.2-pre.0"
     "@t3-oss/env-core": "npm:^0.11.1"
     "@types/lodash": "npm:^4"
     "@types/node": "npm:^20"
@@ -3968,7 +3986,7 @@ __metadata:
     react-cookie: "npm:^7.2.2"
     react-dom: "npm:^19.0.0"
     react-icons: "npm:^5.4.0"
-    react-router: "npm:^7.0.2"
+    react-router: "npm:7.1.2-pre.0"
     react-window: "npm:^1.8.11"
     remixicon: "npm:^4.5.0"
     typescript: "npm:^5.7.2"
@@ -5579,9 +5597,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-router@npm:^7.0.2":
-  version: 7.0.2
-  resolution: "react-router@npm:7.0.2"
+"react-router@npm:7.1.2-pre.0":
+  version: 7.1.2-pre.0
+  resolution: "react-router@npm:7.1.2-pre.0"
   dependencies:
     "@types/cookie": "npm:^0.6.0"
     cookie: "npm:^1.0.1"
@@ -5593,7 +5611,7 @@ __metadata:
   peerDependenciesMeta:
     react-dom:
       optional: true
-  checksum: 10c0/f6c04939218a3d7f2b03b215c2299eab4dbb0dea4a16e0acfd8bf181ec69ff42d66abdba10a25cc3297c514f052a0d03bfb80431225eb763bb27e4e5b0b4a106
+  checksum: 10c0/bbaa9db8b7b7e7a5c663803c3a86a6d458896da439286ff7915bdcd835c19fb1b643e7645611c13eb2b417541ee8b32c690ac270754bc1a07f3c32367f57e7c9
   languageName: node
   linkType: hard
 

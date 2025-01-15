@@ -160,10 +160,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   useEffect(() => {
     if (ratingFetcher.state === "idle" && ratingFetcher.data) {
       const updatedStore = ratingFetcher.data.new_store as any;
+      console.log(updatedStore)
 
       setCanteens(prevCanteens =>
         prevCanteens.map(canteen => {
-          if (canteen.id === updatedStore.store.canteenId) {
+          if (canteen.id === updatedStore.canteenId) {
             return {
               ...canteen,
               stores: canteen.stores.map(store => {

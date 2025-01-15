@@ -34,7 +34,7 @@ const StoreItem = React.memo(({ store, onUserRatingChange }: {
 }) => {
     return (
         <GridItem key={store.id}>
-            <Card.Root width="full" bg="#f2efeb">
+            <Card.Root width="full" bg="#E0F2E9">
                 <Card.Body gap="2">
                     <Card.Title mt="2" display="flex" justifyContent="space-between">
                         <Text>{store.name}</Text>
@@ -66,7 +66,7 @@ const CanteenItem = React.memo(({
     
     return (
         <GridItem>
-            <Card.Root width="full" bg="#f8f6f2">
+            <Card.Root width="full" bg="#f1fff8" borderColor='#7ef7af' borderWidth={2}>
                 <Card.Body gap="2">
                     <Card.Title mt="2"><Text>{canteen.name}</Text></Card.Title>
                     <Grid gap={4} templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}>

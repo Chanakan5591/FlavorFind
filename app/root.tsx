@@ -67,7 +67,7 @@ export default function App() {
               minH: '100svh',
               height: '100%',
               zIndex: -1, // Place it behind the content
-              background: "#e8e8e8"
+              background: "#ebfff3"
             },
           }}
         >
