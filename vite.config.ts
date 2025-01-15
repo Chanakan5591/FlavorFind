@@ -49,7 +49,7 @@ export default defineConfig(({ isSsrBuild, command }) => ({
         );
 
         // 2. Determine the destination path in Vercel's function directory
-        const destinationDir = ".vercel/output/functions/index.func/"; // Make sure this path matches your Vercel setup
+        const destinationDir = "/var/task/node_modules/@prisma/ffdb"; // Make sure this path matches your Vercel setup
 
         // 3. Create the destination directory if it doesn't exist
         mkdirSync(destinationDir, { recursive: true });
