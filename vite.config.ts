@@ -45,7 +45,6 @@ export default defineConfig(({ isSsrBuild, command }) => ({
           "libquery_engine-rhel-openssl-3.0.x.so.node"; // Update with the correct binary name for Vercel (rhel-openssl-3.0.x in your case)
         const sourcePath = join(
           prismaClientPath,
-          "runtime",
           binaryName
         );
 
