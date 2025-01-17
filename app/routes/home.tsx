@@ -1,4 +1,12 @@
-import { Box, Button, createListCollection, HStack, Stack, useDisclosure, Skeleton } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  createListCollection,
+  HStack,
+  Stack,
+  useDisclosure,
+  Skeleton,
+} from "@chakra-ui/react";
 import type { Route } from "./+types/home";
 import prisma from "~/db.server";
 import CafeteriaList from "~/components/CafeteriaList";
@@ -11,12 +19,12 @@ import {
   SelectRoot,
   SelectTrigger,
   SelectValueText,
-} from "~/components/ui/select"
+} from "~/components/ui/select";
 import { Slider } from "~/components/ui/slider";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useFetcher, useSubmit } from "react-router";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
-import { useCookies } from 'react-cookie'
+import { useCookies } from "react-cookie";
 import { verifyClientString } from "~/util/hmac.server";
 import { toaster } from "~/components/ui/toaster";
 import { useFetcherQueueWithPromise } from "~/hooks/MagicFetcher";
@@ -24,7 +32,7 @@ import { getClientIPAddress } from "~/util/ip.server";
 import { rateLimiterService } from "~/util/ratelimit.server";
 import { atom, useAtom } from "jotai";
 
-export function meta({ }: Route.MetaArgs) {
+export function meta({}: Route.MetaArgs) {
   return [
     { title: "New React Router App" },
     { name: "description", content: "Welcome to React Router!" },
@@ -37,46 +45,47 @@ export async function loader({ context }: Route.LoaderArgs) {
     include: {
       stores: {
         include: {
-          ratings: true
-        }
-      }
-    }
+          ratings: true,
+        },
+      },
+    },
   });
 
   return canteens;
 }
 
-export async function action({
-  request,
-}: Route.ActionArgs) {
+export async function action({ request }: Route.ActionArgs) {
   let formData = await request.formData();
   let storeId = await formData.get("storeId");
   let newUserRating = await formData.get("newRating");
-  let hmac = await formData.get("hmac") as string;
+  let hmac = (await formData.get("hmac")) as string;
 
-  const clientIP = getClientIPAddress(request)
-  const fingerprint = hmac.split(":")[0]
+  const clientIP = getClientIPAddress(request);
+  const fingerprint = hmac.split(":")[0];
 
-  const requestAllowed = await rateLimiterService.handleTokenBucketRequest(fingerprint, clientIP ?? '')
+  const requestAllowed = await rateLimiterService.handleTokenBucketRequest(
+    fingerprint,
+    clientIP ?? "",
+  );
 
   if (!requestAllowed) {
-    return { ok: false, status: 429, body: "Rate limit exceeded" }
+    return { ok: false, status: 429, body: "Rate limit exceeded" };
   }
 
   // decode HMAC by splitting it by colon, fingerprintingId, hmac, and nonce
   // then verify the HMAC by generating HMAC from fingerprintId and nonce
-  const hmac_validated = verifyClientString(hmac)
+  const hmac_validated = verifyClientString(hmac);
 
   if (!hmac_validated) {
-    return { ok: false, status: 401, body: "Invalid HMAC" }
+    return { ok: false, status: 401, body: "Invalid HMAC" };
   }
 
   const ratings = await prisma.storeRatings.upsert({
     where: {
       storeId_clientFingerprint: {
         storeId: storeId as string,
-        clientFingerprint: hmac.split(":")[0]
-      }
+        clientFingerprint: hmac.split(":")[0],
+      },
     },
     update: {
       rating: parseFloat(newUserRating as string),
@@ -84,15 +93,15 @@ export async function action({
     create: {
       storeId: storeId as string,
       rating: parseFloat(newUserRating as string),
-      clientFingerprint: hmac.split(":")[0]
+      clientFingerprint: hmac.split(":")[0],
     },
     include: {
       store: {
         include: {
-          ratings: true
-        }
-      }
-    }
+          ratings: true,
+        },
+      },
+    },
   });
 
   return { ok: true, new_store: ratings.store };
@@ -113,79 +122,85 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     return createListCollection({
       items: canteens,
       itemToString: (canteen: CanteenWithStores) => canteen.name,
-      itemToValue: (canteen: CanteenWithStores) => canteen.id
+      itemToValue: (canteen: CanteenWithStores) => canteen.id,
     });
-  }, [canteens])
+  }, [canteens]);
 
-  const [selectedCafeteria, setCafeteria] = useState([""])
-  const [priceRange, setPriceRange] = useState([1, 100])
-  const [cookies, setCookie] = useCookies(['nomnom', 'science'])
+  const [selectedCafeteria, setCafeteria] = useState([""]);
+  const [priceRange, setPriceRange] = useState([1, 100]);
+  const [cookies, setCookie] = useCookies(["nomnom", "science"]);
 
-  const [firstTime, setFirstTime] = useState(false)
-  const [clientFingerprint, setClientFingerprint] = useState("")
+  const [firstTime, setFirstTime] = useState(false);
+  const [clientFingerprint, setClientFingerprint] = useState("");
 
-  let hmacFetcher = useFetcher()
-  let ratingFetcher = useFetcherQueueWithPromise()
+  let hmacFetcher = useFetcher();
+  let ratingFetcher = useFetcherQueueWithPromise();
 
   useEffect(() => {
-    if (cookies['nomnom']) {
-      setClientFingerprint(cookies['nomnom'].split(":")[0])
+    if (cookies["nomnom"]) {
+      setClientFingerprint(cookies["nomnom"].split(":")[0]);
     }
-  }, [cookies['nomnom']])
+  }, [cookies["nomnom"]]);
 
   useEffect(() => {
-    if (!cookies['nomnom']) {
-      setFirstTime(true)
-      FingerprintJS.load().then(fp => {
-        fp.get().then(result => {
+    if (!cookies["nomnom"]) {
+      setFirstTime(true);
+      FingerprintJS.load().then((fp) => {
+        fp.get().then((result) => {
           hmacFetcher.submit(
             { fingerprint: result.visitorId },
-            { method: "POST", action: "/api/science/new_experiment" }
-          )
-        })
-      })
+            { method: "POST", action: "/api/science/new_experiment" },
+          );
+        });
+      });
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (firstTime && hmacFetcher.state === "idle") {
       if (hmacFetcher.data) {
-        const hmac = hmacFetcher.data.hmac as string
-        setCookie('nomnom', hmac, { path: '/', sameSite: 'strict' })
-        setFirstTime(false)
+        const hmac = hmacFetcher.data.hmac as string;
+        setCookie("nomnom", hmac, { path: "/", sameSite: "strict" });
+        setFirstTime(false);
       }
     }
-  }, [hmacFetcher.state])
+  }, [hmacFetcher.state]);
 
   useEffect(() => {
     if (ratingFetcher.state === "idle" && ratingFetcher.data) {
+      if (!ratingFetcher.data.ok) {
+        toaster.error({
+          title: "An error occurred",
+          description: "We couldn't update your rating, please try again later",
+        });
+        return;
+      }
       const updatedStore = ratingFetcher.data.new_store as any;
-      console.log(updatedStore)
 
-      setCanteens(prevCanteens =>
-        prevCanteens.map(canteen => {
+      setCanteens((prevCanteens) =>
+        prevCanteens.map((canteen) => {
           if (canteen.id === updatedStore.canteenId) {
             return {
               ...canteen,
-              stores: canteen.stores.map(store => {
+              stores: canteen.stores.map((store) => {
                 if (store.id === updatedStore.id) {
                   return updatedStore;
                 }
                 return store;
-              })
-            }
+              }),
+            };
           }
           return canteen;
-        })
+        }),
       );
     }
   }, [ratingFetcher.state, ratingFetcher.data]);
 
   const onUserRatingChange = async (storeId: string, newRating: number) => {
     const ratingSubmissionPromise = ratingFetcher.enqueueSubmit(
-      { storeId: storeId, newRating: newRating, hmac: cookies['nomnom'] },
-      { method: "POST" }
-    )
+      { storeId: storeId, newRating: newRating, hmac: cookies["nomnom"] },
+      { method: "POST" },
+    );
 
     toaster.promise(ratingSubmissionPromise, {
       success: {
@@ -200,8 +215,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         title: "An error occurred",
         description: "We couldn't update your rating, please try again later",
       },
-    })
-  }
+    });
+  };
 
   const handlePriceRangeChange = useCallback((value: number[]) => {
     setIsLoading(true);
@@ -217,10 +232,22 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   }, []);
 
   return (
-    <Box padding={8} colorPalette='brand'>
-      <Stack alignItems={'center'} gap={{ md: 6 }} direction={{ md: 'row', base: 'column' }} mb={{ md: 0, base: 4 }}>
-        <Box width='full' height={20}>
-          <SelectRoot readOnly={isLoading} collection={canteens_collection} value={selectedCafeteria} onValueChange={({ value }) => handleCafeteriaChange(value)} rounded='2xl' variant='subtle'>
+    <Box padding={8} colorPalette="brand">
+      <Stack
+        alignItems={"center"}
+        gap={{ md: 6 }}
+        direction={{ md: "row", base: "column" }}
+        mb={{ md: 0, base: 4 }}
+      >
+        <Box width="full" height={20}>
+          <SelectRoot
+            readOnly={isLoading}
+            collection={canteens_collection}
+            value={selectedCafeteria}
+            onValueChange={({ value }) => handleCafeteriaChange(value)}
+            rounded="2xl"
+            variant="subtle"
+          >
             <SelectLabel>Select Cafeteria</SelectLabel>
             <SelectTrigger clearable>
               <SelectValueText placeholder="โรงอาหาร" />
@@ -234,18 +261,33 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             </SelectContent>
           </SelectRoot>
         </Box>
-        <Box width='full'>
-          <Slider readOnly={isLoading} onValueChangeEnd={handleSliderMouseUp} label='Specify Price Range' defaultValue={[1, 100]} value={priceRange} onValueChange={({ value }) => handlePriceRangeChange(value)} width='full' marks={[
-            { value: 0, label: '฿5' },
-            { value: 100, label: '฿300' }
-          ]} />
+        <Box width="full">
+          <Slider
+            readOnly={isLoading}
+            onValueChangeEnd={handleSliderMouseUp}
+            label="Specify Price Range"
+            defaultValue={[1, 100]}
+            value={priceRange}
+            onValueChange={({ value }) => handlePriceRangeChange(value)}
+            width="full"
+            marks={[
+              { value: 0, label: "฿5" },
+              { value: 100, label: "฿300" },
+            ]}
+          />
         </Box>
       </Stack>
       {isLoading ? (
         <Skeleton height="500px" />
       ) : (
-        <CafeteriaList canteens={canteens} priceRange={priceRange} selectedCafeteria={selectedCafeteria[0]} onUserRatingChange={onUserRatingChange} clientFingerprint={clientFingerprint} />
+        <CafeteriaList
+          canteens={canteens}
+          priceRange={priceRange}
+          selectedCafeteria={selectedCafeteria[0]}
+          onUserRatingChange={onUserRatingChange}
+          clientFingerprint={clientFingerprint}
+        />
       )}
     </Box>
-  )
+  );
 }
