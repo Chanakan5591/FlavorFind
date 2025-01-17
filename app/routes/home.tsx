@@ -6,6 +6,8 @@ import {
   Stack,
   useDisclosure,
   Skeleton,
+  useSlider,
+  Slider,
 } from "@chakra-ui/react";
 import type { Route } from "./+types/home";
 import prisma from "~/db.server";
@@ -20,7 +22,6 @@ import {
   SelectTrigger,
   SelectValueText,
 } from "~/components/ui/select";
-import { Slider } from "~/components/ui/slider";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useFetcher, useSubmit } from "react-router";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
@@ -218,9 +219,33 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     });
   };
 
+  function mapPercentageToRange(percentage: number) {
+    if (percentage < 0 || percentage > 100) {
+      throw new Error("Percentage must be between 0 and 100");
+    }
+
+    const minRange = 5;
+    const maxRange = 150;
+
+    // Calculate the range difference
+    const rangeDifference = maxRange - minRange;
+
+    // Map the percentage to the range
+    const mappedValue = Math.round(
+      minRange + (percentage / 100) * rangeDifference,
+    );
+
+    return mappedValue;
+  }
+
   const handlePriceRangeChange = useCallback((value: number[]) => {
     setIsLoading(true);
-    setPriceRange(value);
+
+    const minPrice = mapPercentageToRange(value[0]);
+    const maxPrice = mapPercentageToRange(value[1]);
+    const priceRange = [minPrice, maxPrice];
+
+    setPriceRange(priceRange);
   }, []);
 
   const handleCafeteriaChange = useCallback((value: string[]) => {
@@ -230,6 +255,15 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const handleSliderMouseUp = useCallback(() => {
     setIsLoading(false);
   }, []);
+
+  const priceSlider = useSlider({
+    defaultValue: [0, 100],
+    thumbAlignment: "center",
+    onValueChange: (slider) => handlePriceRangeChange(slider.value),
+    onValueChangeEnd: () => handleSliderMouseUp(),
+  });
+
+  useEffect(() => {}, [priceSlider.value]);
 
   return (
     <Box padding={8} colorPalette="brand">
@@ -262,19 +296,28 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </SelectRoot>
         </Box>
         <Box width="full">
-          <Slider
-            readOnly={isLoading}
-            onValueChangeEnd={handleSliderMouseUp}
-            label="Specify Price Range"
-            defaultValue={[1, 100]}
-            value={priceRange}
-            onValueChange={({ value }) => handlePriceRangeChange(value)}
-            width="full"
-            marks={[
-              { value: 0, label: "฿5" },
-              { value: 100, label: "฿300" },
-            ]}
-          />
+          <Slider.RootProvider value={priceSlider} width="full">
+            <Slider.Label
+              style={{ display: "flex", justifyContent: "space-between" }}
+            >
+              <span>What is your budget?</span>
+              <span>
+                ฿{priceRange[0]} - ฿{priceRange[1]}
+              </span>
+            </Slider.Label>
+            <Slider.Control>
+              <Slider.Track>
+                <Slider.Range />
+              </Slider.Track>
+              <Slider.Thumb index={0}>
+                <Slider.HiddenInput />
+              </Slider.Thumb>
+
+              <Slider.Thumb index={1}>
+                <Slider.HiddenInput />
+              </Slider.Thumb>
+            </Slider.Control>
+          </Slider.RootProvider>
         </Box>
       </Stack>
       {isLoading ? (

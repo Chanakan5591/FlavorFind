@@ -3987,6 +3987,7 @@ __metadata:
     react-dom: "npm:^19.0.0"
     react-icons: "npm:^5.4.0"
     react-router: "npm:7.1.2-pre.0"
+    react-tippy: "npm:^1.4.0"
     react-window: "npm:^1.8.11"
     remixicon: "npm:^4.5.0"
     typescript: "npm:^5.7.2"
@@ -5365,6 +5366,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"popper.js@npm:^1.11.1":
+  version: 1.16.1
+  resolution: "popper.js@npm:1.16.1"
+  checksum: 10c0/1c1a826f757edb5b8c2049dfd7a9febf6ae1e9d0e51342fc715b49a0c1020fced250d26484619883651e097c5764bbcacd2f31496e3646027f079dd83e072681
+  languageName: node
+  linkType: hard
+
 "postcss-value-parser@npm:^4.2.0":
   version: 4.2.0
   resolution: "postcss-value-parser@npm:4.2.0"
@@ -5612,6 +5620,15 @@ __metadata:
     react-dom:
       optional: true
   checksum: 10c0/bbaa9db8b7b7e7a5c663803c3a86a6d458896da439286ff7915bdcd835c19fb1b643e7645611c13eb2b417541ee8b32c690ac270754bc1a07f3c32367f57e7c9
+  languageName: node
+  linkType: hard
+
+"react-tippy@npm:^1.4.0":
+  version: 1.4.0
+  resolution: "react-tippy@npm:1.4.0"
+  dependencies:
+    popper.js: "npm:^1.11.1"
+  checksum: 10c0/ec604d14056b8d96c9f9f9beca287f4c50f55095c9b572059e7dba0ef703f0247bb9199b9cb174435bab49bac74daf34bb9b2956164bedb217e67ff95072c404
   languageName: node
   linkType: hard
 
