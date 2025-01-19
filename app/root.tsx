@@ -14,10 +14,8 @@ import "remixicon/fonts/remixicon.css";
 import Navbar from "./components/navbar";
 
 import "./global.css";
-import "react-tippy/dist/tippy.css";
 
 import { Box } from "@chakra-ui/react";
-import { system } from "theme";
 import { Toaster } from "./components/ui/toaster";
 
 export const links: Route.LinksFunction = () => [
@@ -69,38 +67,6 @@ export default function App() {
             },
           }}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: 0,
-              height: 0,
-            }}
-          >
-            <filter id="noiseFilter">
-              <feTurbulence
-                type="fractalNoise"
-                baseFrequency="0.65"
-                numOctaves="4"
-                seed="15"
-                stitchTiles="stitch"
-                result="turbulence"
-              />
-              <feComponentTransfer in="turbulence" result="darkenedNoise">
-                <feFuncR type="linear" slope="0.1" intercept="0" />
-                <feFuncG type="linear" slope="0.1" intercept="0" />
-                <feFuncB type="linear" slope="0.1" intercept="0" />
-              </feComponentTransfer>
-              <feComposite
-                in="SourceGraphic"
-                in2="darkenedNoise"
-                operator="in"
-              />
-            </filter>
-          </svg>
-
           <Navbar />
           <Outlet />
         </Box>

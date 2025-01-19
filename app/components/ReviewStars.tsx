@@ -66,13 +66,7 @@ export default function ReviewStars({
           return (
             <i
               key={`avg-${index}`}
-              className={
-                isFull
-                  ? "ri-star-fill avg-star"
-                  : isHalf
-                  ? "ri-star-half-line avg-star"
-                  : "ri-star-line avg-star"
-              }
+              className={`star ${isFull ? "ri-star-fill avg-star" : isHalf ? "ri-star-half-line avg-star" : "ri-star-line avg-star"}`}
             ></i>
           );
         })}
@@ -94,13 +88,7 @@ export default function ReviewStars({
           return (
             <i
               key={`user-${index}`}
-              className={
-                isFull
-                  ? "ri-star-fill user-star"
-                  : isHalf
-                  ? "ri-star-half-line user-star"
-                  : "ri-star-line user-star"
-              }
+              className={`star ${isFull ? "ri-star-fill user-star" : isHalf ? "ri-star-half-line user-star" : "ri-star-line user-star"}`}
               style={{ cursor: "pointer" }}
               onMouseMove={(event) => handleMouseMove(event, index)}
               onClick={() => handleClick(starIndex - (isHalf ? 0.5 : 0))}

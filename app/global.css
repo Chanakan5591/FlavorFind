@@ -34,3 +34,7 @@ o
     color: #ffc107;
     /* Brighter yellow on hover */
 }
+
+.star {
+    cursor: pointer;
+}

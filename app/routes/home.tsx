@@ -8,6 +8,7 @@ import {
   Skeleton,
   useSlider,
   Slider,
+  Flex,
 } from "@chakra-ui/react";
 import type { Route } from "./+types/home";
 import prisma from "~/db.server";
@@ -32,8 +33,9 @@ import { useFetcherQueueWithPromise } from "~/hooks/MagicFetcher";
 import { getClientIPAddress } from "~/util/ip.server";
 import { rateLimiterService } from "~/util/ratelimit.server";
 import { atom, useAtom } from "jotai";
+import { Checkbox } from "~/components/ui/checkbox";
 
-export function meta({}: Route.MetaArgs) {
+export function meta({ }: Route.MetaArgs) {
   return [
     { title: "New React Router App" },
     { name: "description", content: "Welcome to React Router!" },
@@ -127,7 +129,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     });
   }, [canteens]);
 
-  const [selectedCafeteria, setCafeteria] = useState([""]);
+  const [selectedCafeteria, setCafeteria] = useState([] as string[]);
   const [priceRange, setPriceRange] = useState([1, 100]);
   const [cookies, setCookie] = useCookies(["nomnom", "science"]);
 
@@ -263,62 +265,79 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     onValueChangeEnd: () => handleSliderMouseUp(),
   });
 
-  useEffect(() => {}, [priceSlider.value]);
+  useEffect(() => { }, [priceSlider.value]);
 
   return (
     <Box padding={8} colorPalette="brand">
       <Stack
-        alignItems={"center"}
-        gap={{ md: 6 }}
-        direction={{ md: "row", base: "column" }}
-        mb={{ md: 0, base: 4 }}
-      >
-        <Box width="full" height={20}>
-          <SelectRoot
-            readOnly={isLoading}
-            collection={canteens_collection}
-            value={selectedCafeteria}
-            onValueChange={({ value }) => handleCafeteriaChange(value)}
-            rounded="2xl"
-            variant="subtle"
-          >
-            <SelectLabel>Select Cafeteria</SelectLabel>
-            <SelectTrigger clearable>
-              <SelectValueText placeholder="โรงอาหาร" />
-            </SelectTrigger>
-            <SelectContent>
-              {canteens_collection.items.map((canteen) => (
-                <SelectItem item={canteen} key={canteen.id}>
-                  {canteen.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </SelectRoot>
-        </Box>
-        <Box width="full">
-          <Slider.RootProvider value={priceSlider} width="full">
-            <Slider.Label
-              style={{ display: "flex", justifyContent: "space-between" }}
-            >
-              <span>What is your budget?</span>
-              <span>
-                ฿{priceRange[0]} - ฿{priceRange[1]}
-              </span>
-            </Slider.Label>
-            <Slider.Control>
-              <Slider.Track>
-                <Slider.Range />
-              </Slider.Track>
-              <Slider.Thumb index={0}>
-                <Slider.HiddenInput />
-              </Slider.Thumb>
+        direction="column"
+        mb={4}>
 
-              <Slider.Thumb index={1}>
-                <Slider.HiddenInput />
-              </Slider.Thumb>
-            </Slider.Control>
-          </Slider.RootProvider>
-        </Box>
+        <Stack
+          alignItems={"center"}
+          gapX={{ md: 6 }}
+          direction={{ md: "row", base: "column" }}
+          mb={{ md: 0, base: 4 }}
+        >
+          <Box width="full" height={20}>
+            <SelectRoot
+              readOnly={isLoading}
+              collection={canteens_collection}
+              value={selectedCafeteria}
+              onValueChange={({ value }) => handleCafeteriaChange(value)}
+              rounded="2xl"
+              variant="subtle"
+              multiple
+            >
+              <SelectLabel>Select Cafeteria</SelectLabel>
+              <SelectTrigger clearable>
+                <SelectValueText placeholder="โรงอาหาร" />
+              </SelectTrigger>
+              <SelectContent>
+                {canteens_collection.items.map((canteen) => (
+                  <SelectItem item={canteen} key={canteen.id}>
+                    {canteen.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </SelectRoot>
+          </Box>
+          <Box width="full">
+            <Slider.RootProvider value={priceSlider} width="full">
+              <Slider.Label
+                style={{ display: "flex", justifyContent: "space-between" }}
+              >
+                <span>What is your budget?</span>
+                <span>
+                  ฿{priceRange[0]} - ฿{priceRange[1]}
+                </span>
+              </Slider.Label>
+              <Slider.Control>
+                <Slider.Track>
+                  <Slider.Range />
+                </Slider.Track>
+                <Slider.Thumb index={0}>
+                  <Slider.HiddenInput />
+                </Slider.Thumb>
+
+                <Slider.Thumb index={1}>
+                  <Slider.HiddenInput />
+                </Slider.Thumb>
+              </Slider.Control>
+            </Slider.RootProvider>
+          </Box>
+        </Stack>
+        <Stack
+          alignItems={"center"}
+          gapX={{ md: 6 }}
+          direction={{ md: "row", base: "column" }}
+          mb={{ md: 0, base: 4 }}
+        >
+          <Flex gapX={4} alignItems="center">
+            <Checkbox checked>ไม่มีแอร์</Checkbox>
+            <Checkbox checked>มีแอร์</Checkbox>
+          </Flex>
+        </Stack>
       </Stack>
       {isLoading ? (
         <Skeleton height="500px" />
@@ -326,7 +345,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         <CafeteriaList
           canteens={canteens}
           priceRange={priceRange}
-          selectedCafeteria={selectedCafeteria[0]}
+          selectedCafeteria={selectedCafeteria}
           onUserRatingChange={onUserRatingChange}
           clientFingerprint={clientFingerprint}
         />
