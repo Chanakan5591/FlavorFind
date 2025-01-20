@@ -34,8 +34,10 @@ import { getClientIPAddress } from "~/util/ip.server";
 import { rateLimiterService } from "~/util/ratelimit.server";
 import { atom, useAtom } from "jotai";
 import { Checkbox } from "~/components/ui/checkbox";
+import { PlanDialog } from "~/components/PlanDialog";
+import { selectedCanteensAtom, priceRangeAtom } from "~/stores";
 
-export function meta({ }: Route.MetaArgs) {
+export function meta({}: Route.MetaArgs) {
   return [
     { title: "FlavorFind" },
     {
@@ -132,8 +134,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     });
   }, [canteens]);
 
-  const [selectedCafeteria, setCafeteria] = useState([] as string[]);
-  const [priceRange, setPriceRange] = useState([1, 100]);
+  const [selectedCanteens, setSelectedCanteens] = useAtom(selectedCanteensAtom);
+  const [priceRange, setPriceRange] = useAtom(priceRangeAtom);
   const [cookies, setCookie] = useCookies(["nomnom", "science"]);
 
   const [firstTime, setFirstTime] = useState(false);
@@ -254,7 +256,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   }, []);
 
   const handleCafeteriaChange = useCallback((value: string[]) => {
-    setCafeteria(value);
+    setSelectedCanteens(value);
   }, []);
 
   const handleSliderMouseUp = useCallback(() => {
@@ -268,14 +270,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     onValueChangeEnd: () => handleSliderMouseUp(),
   });
 
-  useEffect(() => { }, [priceSlider.value]);
+  useEffect(() => {}, [priceSlider.value]);
 
   return (
     <Box padding={8} colorPalette="brand">
-      <Stack
-        direction="column"
-        mb={4}>
-
+      <Stack direction="column" mb={4}>
         <Stack
           alignItems={"center"}
           gapX={{ md: 6 }}
@@ -286,7 +285,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <SelectRoot
               readOnly={isLoading}
               collection={canteens_collection}
-              value={selectedCafeteria}
+              value={selectedCanteens}
               onValueChange={({ value }) => handleCafeteriaChange(value)}
               rounded="2xl"
               variant="subtle"
@@ -334,13 +333,15 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           alignItems={"center"}
           gapX={{ md: 6 }}
           direction={{ md: "row", base: "column" }}
-          mb={{ md: 0, base: 4 }}
+          mb={4}
         >
           <Flex gapX={4} alignItems="center">
             <Checkbox checked>ไม่มีแอร์</Checkbox>
             <Checkbox checked>มีแอร์</Checkbox>
           </Flex>
         </Stack>
+
+        <PlanDialog />
       </Stack>
       {isLoading ? (
         <Skeleton height="500px" />
@@ -348,7 +349,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         <CafeteriaList
           canteens={canteens}
           priceRange={priceRange}
-          selectedCafeteria={selectedCafeteria}
+          selectedCafeteria={selectedCanteens}
           onUserRatingChange={onUserRatingChange}
           clientFingerprint={clientFingerprint}
         />
