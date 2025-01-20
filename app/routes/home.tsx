@@ -37,8 +37,11 @@ import { Checkbox } from "~/components/ui/checkbox";
 
 export function meta({ }: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "FlavorFind" },
+    {
+      name: "description",
+      content: "Your central place in planning meals within Mahidol University",
+    },
   ];
 }
 
