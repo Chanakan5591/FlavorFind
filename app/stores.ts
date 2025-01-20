@@ -5,6 +5,10 @@ const priceRangeAtom = atom<number[]>([0, 100]);
 const airConditioningTypeAtom = atom<"with" | "without" | "both">("both");
 const mealsPlanningAmountAtom = atom<1 | 2 | 3 | 4 | 5>(5);
 const withBeverageAtom = atom(true);
+const filtersAtom = atom({
+  withAircon: false,
+  withoutAircon: false,
+});
 
 export {
   selectedCanteensAtom,
@@ -12,4 +16,5 @@ export {
   airConditioningTypeAtom,
   mealsPlanningAmountAtom,
   withBeverageAtom,
+  filtersAtom,
 };

@@ -3979,6 +3979,7 @@ __metadata:
     isbot: "npm:^5.1.17"
     jotai: "npm:^2.11.0"
     lodash: "npm:^4.17.21"
+    lucide-react: "npm:^0.473.0"
     next-themes: "npm:^0.4.4"
     postcss: "npm:^8.4.49"
     prisma: "npm:^6.0.1"
@@ -4683,6 +4684,15 @@ __metadata:
   version: 7.18.3
   resolution: "lru-cache@npm:7.18.3"
   checksum: 10c0/b3a452b491433db885beed95041eb104c157ef7794b9c9b4d647be503be91769d11206bb573849a16b4cc0d03cbd15ffd22df7960997788b74c1d399ac7a4fed
+  languageName: node
+  linkType: hard
+
+"lucide-react@npm:^0.473.0":
+  version: 0.473.0
+  resolution: "lucide-react@npm:0.473.0"
+  peerDependencies:
+    react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+  checksum: 10c0/0e6911eb2b5332165bdbca6f951a49e9f1162502a9641edea8bae29c0307d720b86bbbcc17fa909c3d0748fbcb8088eb33bb6f627a1cab1118a259b63ee7a38c
   languageName: node
   linkType: hard
 

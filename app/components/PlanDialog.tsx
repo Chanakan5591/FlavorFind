@@ -24,6 +24,7 @@ import { Grid, Input, Text } from "@chakra-ui/react";
 
 export function PlanDialog() {
   const [withBeverage, setWithBeverage] = useState(true);
+
   const [mealsPlanningAmount, setMealsPlanningAmount] = useAtom(
     mealsPlanningAmountAtom,
   );
@@ -80,7 +81,13 @@ export function PlanDialog() {
               )}
             </Grid>
 
-            <Switch colorPalette="brand.solid">With Beverage</Switch>
+            <Switch
+              colorPalette="brand.solid"
+              checked={withBeverage}
+              onCheckedChange={(e) => setWithBeverage(e.checked)}
+            >
+              With Beverage
+            </Switch>
           </form>
         </DialogBody>
         <DialogFooter>

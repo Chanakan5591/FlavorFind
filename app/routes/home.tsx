@@ -32,10 +32,10 @@ import { toaster } from "~/components/ui/toaster";
 import { useFetcherQueueWithPromise } from "~/hooks/MagicFetcher";
 import { getClientIPAddress } from "~/util/ip.server";
 import { rateLimiterService } from "~/util/ratelimit.server";
-import { atom, useAtom } from "jotai";
+import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import { Checkbox } from "~/components/ui/checkbox";
 import { PlanDialog } from "~/components/PlanDialog";
-import { selectedCanteensAtom, priceRangeAtom } from "~/stores";
+import { selectedCanteensAtom, priceRangeAtom, filtersAtom } from "~/stores";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -270,11 +270,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     onValueChangeEnd: () => handleSliderMouseUp(),
   });
 
+  const [filters, setFilters] = useAtom(filtersAtom);
+
   useEffect(() => {}, [priceSlider.value]);
 
   return (
     <Box padding={8} colorPalette="brand">
-      <Stack direction="column" mb={4}>
+      <Stack direction="column">
         <Stack
           alignItems={"center"}
           gapX={{ md: 6 }}
@@ -331,17 +333,37 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </Stack>
         <Stack
           alignItems={"center"}
+          justifyContent="space-between"
           gapX={{ md: 6 }}
           direction={{ md: "row", base: "column" }}
           mb={4}
         >
           <Flex gapX={4} alignItems="center">
-            <Checkbox checked>ไม่มีแอร์</Checkbox>
-            <Checkbox checked>มีแอร์</Checkbox>
+            <Checkbox
+              checked={filters.withoutAircon}
+              onCheckedChange={(e) =>
+                setFilters((filters) => ({
+                  ...filters,
+                  withoutAircon: e.checked as boolean,
+                }))
+              }
+            >
+              ไม่มีแอร์
+            </Checkbox>
+            <Checkbox
+              checked={filters.withAircon}
+              onCheckedChange={(e) =>
+                setFilters((filters) => ({
+                  ...filters,
+                  withAircon: e.checked as boolean,
+                }))
+              }
+            >
+              มีแอร์
+            </Checkbox>
           </Flex>
+          <PlanDialog />
         </Stack>
-
-        <PlanDialog />
       </Stack>
       {isLoading ? (
         <Skeleton height="500px" />
