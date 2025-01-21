@@ -27,6 +27,7 @@
     "react": "^19.0.0",
     "react-cookie": "^7.2.2",
     "react-dom": "^19.0.0",
+    "react-hook-form": "^7.54.2",
     "react-icons": "^5.4.0",
     "react-router": "7.1.2-pre.0",
     "react-window": "^1.8.11",

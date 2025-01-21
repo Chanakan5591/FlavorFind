@@ -9,8 +9,10 @@ const filtersAtom = atom({
   withAircon: false,
   withoutAircon: false,
 });
+const totalPlannedBudgetsAtom = atom<number>(100);
 
 export {
+  totalPlannedBudgetsAtom,
   selectedCanteensAtom,
   priceRangeAtom,
   airConditioningTypeAtom,
