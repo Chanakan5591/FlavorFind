@@ -15,6 +15,7 @@ type CanteensBusyPeriods {
 
 type StoresMenu {
   category    String
+  sub_category  String?
   name        String
   price       Float
 }

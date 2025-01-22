@@ -1,4 +1,4 @@
-import type { Route } from "./+types/new_plan";
+import type { Route } from "./+types/plan";
 import { useParams } from "react-router";
 
 // return page that will redirect to /

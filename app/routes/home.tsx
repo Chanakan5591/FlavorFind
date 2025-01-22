@@ -8,6 +8,7 @@ import {
   Skeleton,
   useSlider,
   Slider,
+  Grid,
   Flex,
 } from "@chakra-ui/react";
 import type { Route } from "./+types/home";
@@ -334,14 +335,20 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             </Slider.RootProvider>
           </Box>
         </Stack>
-        <Stack
-          alignItems={"center"}
-          justifyContent="space-between"
-          gapX={{ md: 6 }}
+        <Flex
+          gap={4} // Consistent spacing between checkboxes
+          justifyContent="space-between" // Left-aligned on md, centered on base for grid
+          alignItems="center" // Vertically align checkboxes in the row (md)
           direction={{ md: "row", base: "column" }}
+          w="full" // Take up full width available
           mb={4}
         >
-          <Flex gapX={4} alignItems="center">
+          <Flex
+            wrap="wrap"
+            alignItems="center"
+            gap={4}
+            justifyContent={{ md: "left", base: "center" }}
+          >
             <Checkbox
               checked={filters.noAircon}
               onCheckedChange={(e) =>
@@ -364,9 +371,97 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             >
               มีแอร์
             </Checkbox>
+            <Checkbox
+              checked={filters.noodles}
+              onCheckedChange={(e) =>
+                setFilters((filters) => ({
+                  ...filters,
+                  noodles: e.checked as boolean,
+                }))
+              }
+            >
+              ก๋วยเตี๋ยว/เกาเหลา
+            </Checkbox>
+            <Checkbox
+              checked={filters.soup_curry}
+              onCheckedChange={(e) =>
+                setFilters((filters) => ({
+                  ...filters,
+                  soup_curry: e.checked as boolean,
+                }))
+              }
+            >
+              ต้ม แกง
+            </Checkbox>
+            <Checkbox
+              checked={filters.chicken_rice}
+              onCheckedChange={(e) =>
+                setFilters((filters) => ({
+                  ...filters,
+                  chicken_rice: e.checked as boolean,
+                }))
+              }
+            >
+              ข้าวมันไก่
+            </Checkbox>
+            <Checkbox
+              checked={filters.rice_curry}
+              onCheckedChange={(e) =>
+                setFilters((filters) => ({
+                  ...filters,
+                  rice_curry: e.checked as boolean,
+                }))
+              }
+            >
+              ข้าวราดแกง/ข้าวต่างๆ
+            </Checkbox>
+            <Checkbox
+              checked={filters.somtum_northeastern}
+              onCheckedChange={(e) =>
+                setFilters((filters) => ({
+                  ...filters,
+                  somtum_northeastern: e.checked as boolean,
+                }))
+              }
+            >
+              ส้มตำ อาหารอีสาน
+            </Checkbox>
+            <Checkbox
+              checked={filters.steak}
+              onCheckedChange={(e) =>
+                setFilters((filters) => ({
+                  ...filters,
+                  steak: e.checked as boolean,
+                }))
+              }
+            >
+              สเต็ก
+            </Checkbox>
+            <Checkbox
+              checked={filters.japanese}
+              onCheckedChange={(e) =>
+                setFilters((filters) => ({
+                  ...filters,
+                  japanese: e.checked as boolean,
+                }))
+              }
+            >
+              อาหารญี่ปุ่น
+            </Checkbox>
+            <Checkbox
+              checked={filters.others}
+              onCheckedChange={(e) =>
+                setFilters((filters) => ({
+                  ...filters,
+                  others: e.checked as boolean,
+                }))
+              }
+            >
+              อื่นๆ
+            </Checkbox>
           </Flex>
           <PlanDialog />
-        </Stack>
+        </Flex>
       </Stack>
       {isLoading ? (
         <Skeleton height="500px" />

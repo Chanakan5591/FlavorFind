@@ -7,6 +7,14 @@ const withBeverageAtom = atom(true);
 const filtersAtom = atom({
   withAircon: false,
   noAircon: false,
+  noodles: false,
+  soup_curry: false,
+  chicken_rice: false,
+  rice_curry: false,
+  somtum_northeastern: false,
+  steak: false,
+  japanese: false,
+  others: false,
 });
 const totalPlannedBudgetsAtom = atom<number>(100);
 

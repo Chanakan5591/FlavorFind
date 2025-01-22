@@ -219,6 +219,7 @@ const CanteenItem = React.memo(
     );
   },
 );
+
 // Cafeteria list component
 const CafeteriaList = React.memo(
   ({
@@ -249,18 +250,14 @@ const CafeteriaList = React.memo(
 
           // Filter by air conditioning preference
           if (filters.withAircon && !filters.noAircon) {
-            // Only include canteens with air conditioning
             if (!canteen.withAirConditioning) {
               return false;
             }
           } else if (!filters.withAircon && filters.noAircon) {
-            // Only include canteens without air conditioning
             if (canteen.withAirConditioning) {
               return false;
             }
           }
-          // If both withAircon and noAircon are false or both are true,
-          // it implies no specific preference, so don't filter based on air conditioning.
 
           return true;
         })
@@ -271,24 +268,81 @@ const CafeteriaList = React.memo(
               (rating) => rating.clientFingerprint === clientFingerprint,
             )?.rating;
 
+            // Filter menu items based on sub_category and price range
+            const filteredMenu = store.menu.filter((menu) => {
+              // Price range filter
+              if (menu.price < priceRange[0] || menu.price > priceRange[1]) {
+                return false;
+              }
+
+              // Sub-category filter (hardcoded mapping)
+              let includeItem = false; // Flag to track if the item should be included
+
+              if (menu.category === "food") {
+                switch (menu.sub_category) {
+                  case "noodles":
+                    includeItem = filters.noodles;
+                    break;
+                  case "soup_curry":
+                    includeItem = filters.soup_curry;
+                    break;
+                  case "chicken_rice":
+                    includeItem = filters.chicken_rice;
+                    break;
+                  case "rice_curry":
+                    includeItem = filters.rice_curry;
+                    break;
+                  case "somtum_northeastern":
+                    includeItem = filters.somtum_northeastern;
+                    break;
+                  case "steak":
+                    includeItem = filters.steak;
+                    break;
+                  case "japanese":
+                    includeItem = filters.japanese;
+                    break;
+                  default:
+                    includeItem = filters.others; // If not a specific sub-category, check "others"
+                }
+              } else if (menu.category === "DRINK") {
+                // You can add similar logic for drink sub-categories here
+                // if you want to filter drinks in the future.
+                // For now, we will not filter drinks based on filters except price.
+                includeItem = true;
+              } else {
+                includeItem = filters.others; // default catch all others if category is not food nor drink
+              }
+
+              // Check if "others" is selected and the item doesn't match any other filter
+              if (!includeItem && filters.others) {
+                includeItem = true;
+              }
+
+              // If no specific sub-category filters are active, include the item
+              if (
+                !filters.noodles &&
+                !filters.soup_curry &&
+                !filters.chicken_rice &&
+                !filters.rice_curry &&
+                !filters.somtum_northeastern &&
+                !filters.steak &&
+                !filters.japanese &&
+                !filters.others
+              ) {
+                includeItem = true;
+              }
+
+              return includeItem;
+            });
+
             return {
               ...store,
-              menu: store.menu.filter(
-                (menu) =>
-                  menu.price >= priceRange[0] && menu.price <= priceRange[1],
-              ),
+              menu: filteredMenu,
               userStoreRating: userRating ?? 0,
             };
           }),
         }));
-    }, [
-      canteens,
-      selectedCafeteria,
-      priceRange,
-      clientFingerprint,
-      filters.withAircon,
-      filters.noAircon,
-    ]);
+    }, [canteens, selectedCafeteria, priceRange, clientFingerprint, filters]);
 
     return (
       <Grid gap={4}>
