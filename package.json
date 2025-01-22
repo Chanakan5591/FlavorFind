@@ -13,6 +13,7 @@
     "@chakra-ui/react": "^3.2.3",
     "@emotion/react": "^11.14.0",
     "@fingerprintjs/fingerprintjs": "^4.5.1",
+    "@paralleldrive/cuid2": "^2.2.2",
     "@prisma/client": "^6.0.1",
     "@react-router/node": "7.1.2-pre.0",
     "@react-router/serve": "7.1.2-pre.0",

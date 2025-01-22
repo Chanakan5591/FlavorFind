@@ -245,6 +245,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     return mappedValue;
   }
 
+  const [priceSliderValue, setPriceSliderValue] = useState([0, 100]);
+
   const handlePriceRangeChange = useCallback((value: number[]) => {
     setIsLoading(true);
 
@@ -252,6 +254,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     const maxPrice = mapPercentageToRange(value[1]);
     const priceRange = [minPrice, maxPrice];
 
+    setPriceSliderValue(value);
     setPriceRange(priceRange);
   }, []);
 
@@ -264,8 +267,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   }, []);
 
   const priceSlider = useSlider({
-    defaultValue: [0, 100],
     thumbAlignment: "center",
+    value: priceSliderValue,
     onValueChange: (slider) => handlePriceRangeChange(slider.value),
     onValueChangeEnd: () => handleSliderMouseUp(),
   });
@@ -340,11 +343,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         >
           <Flex gapX={4} alignItems="center">
             <Checkbox
-              checked={filters.withoutAircon}
+              checked={filters.noAircon}
               onCheckedChange={(e) =>
                 setFilters((filters) => ({
                   ...filters,
-                  withoutAircon: e.checked as boolean,
+                  noAircon: e.checked as boolean,
                 }))
               }
             >

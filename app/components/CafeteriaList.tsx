@@ -248,18 +248,18 @@ const CafeteriaList = React.memo(
           }
 
           // Filter by air conditioning preference
-          if (filters.withAircon && !filters.withoutAircon) {
+          if (filters.withAircon && !filters.noAircon) {
             // Only include canteens with air conditioning
             if (!canteen.withAirConditioning) {
               return false;
             }
-          } else if (!filters.withAircon && filters.withoutAircon) {
+          } else if (!filters.withAircon && filters.noAircon) {
             // Only include canteens without air conditioning
             if (canteen.withAirConditioning) {
               return false;
             }
           }
-          // If both withAircon and withoutAircon are false or both are true,
+          // If both withAircon and noAircon are false or both are true,
           // it implies no specific preference, so don't filter based on air conditioning.
 
           return true;
@@ -287,7 +287,7 @@ const CafeteriaList = React.memo(
       priceRange,
       clientFingerprint,
       filters.withAircon,
-      filters.withoutAircon,
+      filters.noAircon,
     ]);
 
     return (

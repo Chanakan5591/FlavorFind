@@ -1328,6 +1328,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@noble/hashes@npm:^1.1.5":
+  version: 1.7.1
+  resolution: "@noble/hashes@npm:1.7.1"
+  checksum: 10c0/2f8ec0338ccc92b576a0f5c16ab9c017a3a494062f1fbb569ae641c5e7eab32072f9081acaa96b5048c0898f972916c818ea63cbedda707886a4b5ffcfbf94e3
+  languageName: node
+  linkType: hard
+
 "@nodelib/fs.scandir@npm:2.1.5":
   version: 2.1.5
   resolution: "@nodelib/fs.scandir@npm:2.1.5"
@@ -1421,6 +1428,15 @@ __metadata:
   version: 0.41.0
   resolution: "@pandacss/is-valid-prop@npm:0.41.0"
   checksum: 10c0/338df67002ad6fc4beafcb096864720f937793db1e32e30568607997cee2d62ea84ad83e85436948b2c51196fbe16ed3eeae601ff8ca7ae0581806fc35b23c37
+  languageName: node
+  linkType: hard
+
+"@paralleldrive/cuid2@npm:^2.2.2":
+  version: 2.2.2
+  resolution: "@paralleldrive/cuid2@npm:2.2.2"
+  dependencies:
+    "@noble/hashes": "npm:^1.1.5"
+  checksum: 10c0/af5826df93de437121308f4f4ce0b2eeb89b60bb57a1a6592fb89c0d40d311ad1d9f3f6a4db2cce6f2bcf572de1aa3f85704254e89b18ce61c41ebb06564c4ee
   languageName: node
   linkType: hard
 
@@ -3961,6 +3977,7 @@ __metadata:
     "@chakra-ui/react": "npm:^3.2.3"
     "@emotion/react": "npm:^11.14.0"
     "@fingerprintjs/fingerprintjs": "npm:^4.5.1"
+    "@paralleldrive/cuid2": "npm:^2.2.2"
     "@prisma/client": "npm:^6.0.1"
     "@react-router/dev": "npm:^7.0.2"
     "@react-router/node": "npm:7.1.2-pre.0"
