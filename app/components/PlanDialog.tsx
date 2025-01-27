@@ -31,7 +31,7 @@ import { useFetcher, useNavigate } from "react-router";
 import { useForm, type FieldValues, type SubmitHandler } from "react-hook-form";
 import { useAtomValue } from "jotai";
 import { createId } from "@paralleldrive/cuid2";
-
+import pako from "pako";
 type Inputs = {
   meals: Array<{
     date: string;
@@ -63,7 +63,7 @@ export function PlanDialog() {
   const fetcher = useFetcher();
   const navigate = useNavigate();
 
-  const onPlanSubmit: SubmitHandler<FieldValues> = (data) => {
+  const onPlanSubmit: SubmitHandler<FieldValues> = async (data) => {
     let formDataToSend = {
       ...data,
       mealsPlanningAmount,
@@ -76,38 +76,47 @@ export function PlanDialog() {
     // append filters to the form data
     formDataToSend = Object.assign(formDataToSend, filters);
 
-    const newPlanParams = Object.entries(formDataToSend).reduce(
-      (acc, [key, value], index, arr) => {
+    // Preprocess the object:
+    const preprocessedData = Object.entries(formDataToSend).reduce(
+      (acc, [key, value]) => {
+        // 1. Convert true to 1 and false to 0
+        const processedValue = value === true ? 1 : value === false ? 0 : value;
+
+        // 2. Abbreviate keys (same as before)
         const newKey = key
           .split("")
           .filter((char, index) => index === 0 || char === char.toUpperCase())
           .join("");
-        return (
-          acc + `${newKey}=${value}` + (index < arr.length - 1 ? ";" : ";")
-        );
+
+        acc[newKey] = processedValue;
+        return acc;
       },
-      "",
+      {},
     );
 
-    function stringToUrlSafeBase64(str) {
-      // 1. Encode the string to UTF-8 (byte array)
-      const utf8Bytes = new TextEncoder().encode(str);
+    // Convert to string, compress with Brotli, and then Base64 encode:
+    const newPlanParams = Object.entries(preprocessedData)
+      .map(([key, value]) => `${key}=${value}`)
+      .join(";");
 
-      // 2. Convert the byte array to a binary string
-      const binaryString = String.fromCharCode(...utf8Bytes);
+    async function compressAndEncode(str: string) {
+      // 1. Convert the string to a Uint8Array
+      const uint8Array = new TextEncoder().encode(str);
 
-      // 3. Encode the binary string to Base64
-      const base64 = btoa(binaryString);
+      const compressed = pako.deflate(uint8Array);
 
-      // 4. Make it URL-safe
-      return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+      // 3. Encode the compressed Uint8Array to URL-safe Base64
+      const base64 = btoa(String.fromCharCode(...compressed))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
+
+      return base64;
     }
 
-    const encodedParam = stringToUrlSafeBase64(newPlanParams);
-
+    const encodedParam = await compressAndEncode(newPlanParams);
     console.log(newPlanParams);
-
-    navigate(`/plan/${encodedParam}/${stringToUrlSafeBase64(createId())}`);
+    navigate(`/plan/${encodedParam}/${await compressAndEncode(createId())}`);
   };
 
   const {

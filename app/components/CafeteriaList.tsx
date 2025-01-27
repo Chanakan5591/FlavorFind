@@ -308,7 +308,9 @@ const CafeteriaList = React.memo(
                 // You can add similar logic for drink sub-categories here
                 // if you want to filter drinks in the future.
                 // For now, we will not filter drinks based on filters except price.
-                includeItem = true;
+
+                // The part that currently allow all drinks to be shown on the webpage
+                includeItem = filters.beverage;
               } else {
                 includeItem = filters.others; // default catch all others if category is not food nor drink
               }
@@ -327,7 +329,8 @@ const CafeteriaList = React.memo(
                 !filters.somtum_northeastern &&
                 !filters.steak &&
                 !filters.japanese &&
-                !filters.others
+                !filters.others &&
+                !filters.beverage
               ) {
                 includeItem = true;
               }

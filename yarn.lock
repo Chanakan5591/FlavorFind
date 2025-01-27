@@ -1871,6 +1871,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/pako@npm:^2.0.3":
+  version: 2.0.3
+  resolution: "@types/pako@npm:2.0.3"
+  checksum: 10c0/45119ac3c4e8a77317c35493327039b74e333562f06ce038048228918d8ddfaa7958125aab960d1565b3861046022754c414dba1eecb210c44a32c415956bee2
+  languageName: node
+  linkType: hard
+
 "@types/parse-json@npm:^4.0.0":
   version: 4.0.2
   resolution: "@types/parse-json@npm:4.0.2"
@@ -2970,6 +2977,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"brotli-wasm@npm:^3.0.1":
+  version: 3.0.1
+  resolution: "brotli-wasm@npm:3.0.1"
+  checksum: 10c0/b458b9fe7c31a5e8255133bd26a258f79fb1b816a8d609b45a662726476315e63c539bcb7d5b8bd542cc9a7d2c91fcd4ce27154d19c33d1932f5b1618e09f23b
+  languageName: node
+  linkType: hard
+
 "browserify-zlib@npm:^0.1.4":
   version: 0.1.4
   resolution: "browserify-zlib@npm:0.1.4"
@@ -3985,10 +3999,12 @@ __metadata:
     "@t3-oss/env-core": "npm:^0.11.1"
     "@types/lodash": "npm:^4"
     "@types/node": "npm:^20"
+    "@types/pako": "npm:^2.0.3"
     "@types/react": "npm:^19.0.1"
     "@types/react-dom": "npm:^19.0.1"
     "@types/react-window": "npm:^1"
     autoprefixer: "npm:^10.4.20"
+    brotli-wasm: "npm:^3.0.1"
     cross-env: "npm:^7.0.3"
     express: "npm:^4.21.2"
     ioredis: "npm:^5.4.1"
@@ -3998,6 +4014,7 @@ __metadata:
     lodash: "npm:^4.17.21"
     lucide-react: "npm:^0.473.0"
     next-themes: "npm:^0.4.4"
+    pako: "npm:^2.1.0"
     postcss: "npm:^8.4.49"
     prisma: "npm:^6.0.1"
     react: "npm:^19.0.0"
@@ -5250,6 +5267,13 @@ __metadata:
   version: 0.1.2
   resolution: "package-manager-detector@npm:0.1.2"
   checksum: 10c0/13ea222561fc045a9d06cde7dcbe2403b6b4e7c0f11814f01b0f4f4da12a54edfb406aed7996323d9c60e5a76e25f0363d981e298807efb167758f5dc086ed79
+  languageName: node
+  linkType: hard
+
+"pako@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "pako@npm:2.1.0"
+  checksum: 10c0/8e8646581410654b50eb22a5dfd71159cae98145bd5086c9a7a816ec0370b5f72b4648d08674624b3870a521e6a3daffd6c2f7bc00fdefc7063c9d8232ff5116
   languageName: node
   linkType: hard
 

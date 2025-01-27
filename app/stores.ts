@@ -14,6 +14,7 @@ const filtersAtom = atom({
   somtum_northeastern: false,
   steak: false,
   japanese: false,
+  beverage: false,
   others: false,
 });
 const totalPlannedBudgetsAtom = atom<number>(100);
