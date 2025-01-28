@@ -1,5 +1,5 @@
-import { PrismaClient } from '@prisma/ffdb'
-import { env } from './env'
+import { PrismaClient } from "@prisma/ffdb";
+import { env } from "./env";
 
-const prisma = new PrismaClient()
-export default prisma
+const prisma = new PrismaClient();
+export default prisma;

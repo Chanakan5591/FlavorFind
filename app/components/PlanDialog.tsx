@@ -28,10 +28,11 @@ import {
 } from "~/stores";
 import { Box, Collapsible, Flex, Grid, Input, Text } from "@chakra-ui/react";
 import { useFetcher, useNavigate } from "react-router";
-import { useForm, type FieldValues, type SubmitHandler } from "react-hook-form";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { useAtomValue } from "jotai";
 import { createId } from "@paralleldrive/cuid2";
 import pako from "pako";
+
 type Inputs = {
   meals: Array<{
     date: string;
@@ -42,7 +43,6 @@ type Inputs = {
 
 export function PlanDialog() {
   const [withBeverage, setWithBeverage] = useState(true);
-
   const [mealsPlanningAmount, setMealsPlanningAmount] = useAtom(
     mealsPlanningAmountAtom,
   );
@@ -50,20 +50,31 @@ export function PlanDialog() {
   const [totalPlannedBudgets, setTotalPlannedBudgets] = useAtom(
     totalPlannedBudgetsAtom,
   );
-
   const selectedCanteens = useAtomValue(selectedCanteensAtom);
   const priceRange = useAtomValue(priceRangeAtom);
   const filters = useAtomValue(filtersAtom);
+
+  const fetcher = useFetcher();
+  const navigate = useNavigate();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<Inputs>({
+    defaultValues: {
+      meals: [],
+      withBeverage: true,
+    },
+  });
 
   const validMealsPlanningAmount =
     typeof mealsPlanningAmount === "number" && !isNaN(mealsPlanningAmount)
       ? Math.max(0, Math.min(mealsPlanningAmount, 5))
       : 0;
 
-  const fetcher = useFetcher();
-  const navigate = useNavigate();
-
-  const onPlanSubmit: SubmitHandler<FieldValues> = async (data) => {
+  const onPlanSubmit: SubmitHandler<Inputs> = async (data) => {
+    console.log(data);
     let formDataToSend = {
       ...data,
       mealsPlanningAmount,
@@ -75,6 +86,8 @@ export function PlanDialog() {
 
     // append filters to the form data
     formDataToSend = Object.assign(formDataToSend, filters);
+
+    let tmp = {};
 
     // Preprocess the object:
     const preprocessedData = Object.entries(formDataToSend).reduce(
@@ -88,7 +101,31 @@ export function PlanDialog() {
           .filter((char, index) => index === 0 || char === char.toUpperCase())
           .join("");
 
-        acc[newKey] = processedValue;
+        if (key === "meals") {
+          const mealsDate: string[] = [];
+          const mealsTime: string[] = [];
+          value.forEach(
+            (meal: { date: string; time: string }, index: number) => {
+              if (meal.date) {
+                mealsDate.push(`${index}#${meal.date}`);
+              }
+              if (meal.time) {
+                mealsTime.push(`${index}#${meal.time}`);
+              }
+            },
+          );
+          acc["mD"] = "";
+          acc["mT"] = "";
+          if (mealsDate.length > 0) {
+            acc["mD"] = `'${mealsDate.join("|")}'`;
+          }
+          if (mealsTime.length > 0) {
+            acc["mT"] = `'${mealsTime.join("|")}'`;
+          }
+        } else {
+          acc[newKey] = processedValue;
+        }
+
         return acc;
       },
       {},
@@ -118,11 +155,6 @@ export function PlanDialog() {
     console.log(newPlanParams);
     navigate(`/plan/${encodedParam}/${await compressAndEncode(createId())}`);
   };
-
-  const {
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
 
   return (
     <DialogRoot>
@@ -186,7 +218,6 @@ export function PlanDialog() {
 
               <Collapsible.Content>
                 <Grid templateColumns="repeat(2, 1fr)" gap="1rem">
-                  {/* TODO: Submit meals information in this dialog box with the information from the main page to server action for plan generation, using deterministic seed such as /plan/{encodedParam}/{planId}, where a specific settings can still have different plans based on the random id */}
                   {[...Array(Math.min(validMealsPlanningAmount, 5))].map(
                     (_, index) => (
                       <>
@@ -195,14 +226,20 @@ export function PlanDialog() {
                           label={`Meal ${index + 1} Date`}
                           errorText="The entry is invalid"
                         >
-                          <Input name={`meal${index + 1}_date`} type="date" />
+                          <Input
+                            {...register(`meals.${index}.date` as const)}
+                            type="date"
+                          />
                         </Field>
                         <Field
                           key={`mealtime_${index}`}
                           label={`Meal ${index + 1} Time`}
                           errorText="The entry is invalid"
                         >
-                          <Input name={`meal${index + 1}_time`} type="time" />
+                          <Input
+                            {...register(`meals.${index}.time` as const)}
+                            type="time"
+                          />
                         </Field>
                       </>
                     ),
@@ -222,11 +259,7 @@ export function PlanDialog() {
               alignItems: "center",
             }}
           >
-            <Switch
-              colorPalette="brand.solid"
-              checked={withBeverage}
-              onCheckedChange={(e) => setWithBeverage(e.checked)}
-            >
+            <Switch colorPalette="brand.solid" {...register("withBeverage")}>
               With Beverage
             </Switch>
             <Flex gapX={2}>
