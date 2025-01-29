@@ -4018,6 +4018,7 @@ __metadata:
     postcss: "npm:^8.4.49"
     prisma: "npm:^6.0.1"
     react: "npm:^19.0.0"
+    react-confetti-boom: "npm:^1.1.2"
     react-cookie: "npm:^7.2.2"
     react-dom: "npm:^19.0.0"
     react-hook-form: "npm:^7.54.2"
@@ -5599,6 +5600,16 @@ __metadata:
     iconv-lite: "npm:0.4.24"
     unpipe: "npm:1.0.0"
   checksum: 10c0/b201c4b66049369a60e766318caff5cb3cc5a900efd89bdac431463822d976ad0670912c931fdbdcf5543207daf6f6833bca57aa116e1661d2ea91e12ca692c4
+  languageName: node
+  linkType: hard
+
+"react-confetti-boom@npm:^1.1.2":
+  version: 1.1.2
+  resolution: "react-confetti-boom@npm:1.1.2"
+  peerDependencies:
+    react: ">=16.8.0"
+    react-dom: ">=16.8.0"
+  checksum: 10c0/7613d63a042c67698ade5ae8e34a471c0d85df43209062a280cc719952496c2e78ef619d9aedb01a063cf01bcbcd68a6e84631f9e343e6babb62b14614b1288c
   languageName: node
   linkType: hard
 

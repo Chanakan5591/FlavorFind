@@ -5,6 +5,7 @@ import prisma from "~/db.server";
 import { findMatchingStores } from "~/util/datentime.server";
 import type { stores, StoresMenu } from "@prisma/ffdb";
 import { Box, Flex, Grid, HStack, Text, VStack } from "@chakra-ui/react";
+import Confetti from "react-confetti-boom";
 
 const mappings = {
   mD: "mealsDate",
@@ -214,6 +215,7 @@ interface AvailableStoresForMeal {
 
 interface SpecificStoreWithMeal {
   meal: Meal;
+  canteenName?: string;
   foodStore: stores;
   drinkStore: stores;
 }
@@ -229,7 +231,6 @@ function selectRandomStores(
   const selectedStores: SpecificStoreWithMeal[] = [];
   const usedFoodStores: Set<string> = new Set();
   const usedDrinkStores: Set<string> = new Set();
-  let foundStoreWithBeverage = false;
 
   for (const mealStore of mealsStores) {
     const { meal: mealInfo, foodStores, drinkStores } = mealStore;
@@ -407,17 +408,26 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     criteria,
     selectedCanteenIds,
   );
-  const selectedStores = selectRandomStores(
+  const selectedStoresForEachMeal = selectRandomStores(
     allStoresInCriteria,
     planId,
     priceRange,
   );
 
+  // assign cantten name to each store
+  selectedStoresForEachMeal.forEach((mealStore) => {
+    const { foodStore } = mealStore;
+    const canteen = filteredCanteens.find(
+      (canteen) => canteen.id === foodStore.canteenId,
+    );
+    mealStore.canteenName = canteen?.name;
+  });
+
   const usedMeals: Set<string> = new Set();
   const usedDrinks: Set<string> = new Set();
 
-  const selectedMenu = selectedStores.map((mealStore) => {
-    const { meal, foodStore, drinkStore } = mealStore;
+  const selectedMenu = selectedStoresForEachMeal.map((mealStore) => {
+    const { meal, foodStore, drinkStore, canteenName } = mealStore;
 
     const drinkOptions = drinkStore.menu.filter(
       (menu) =>
@@ -463,6 +473,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
     return {
       meal,
+      canteenName,
       store: storeWithoutMenu,
       pickedMeal: pickedFood,
       drinkMenu: pickedDrink,
@@ -472,7 +483,6 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
   return {
     selectedMenu,
-    selectedCanteens: filteredCanteens,
     totalPlannedBudgets,
   };
 };
@@ -481,96 +491,100 @@ export default function NewPlan({ loaderData }: Route.ComponentProps) {
   const selectedMenu = loaderData.selectedMenu;
 
   return (
-    <VStack>
-      <Text fontSize="2xl" fontWeight="semibold">
-        Meal Plan
-      </Text>
-      <Grid
-        gap={4}
-        templateColumns={{
-          base: "1fr",
-          md: "repeat(2, 1fr)",
-        }}
-        m={4}
-        css={{
-          "& > *:last-child:nth-child(odd)": {
-            gridColumn: "1 / -1",
-          },
-        }}
-      >
-        {selectedMenu!.map((meal) => (
-          <Box>
-            <Box
-              bg="accent.300"
-              px={4}
-              pt={4}
-              pb={2}
-              rounded="xl"
-              position="relative"
-              boxShadow="lg"
-              border="2px solid"
-              zIndex={2}
-            >
+    <>
+      <VStack>
+        <Text fontSize="2xl" fontWeight="semibold">
+          Meal Plan
+        </Text>
+        <Grid
+          gap={4}
+          templateColumns={{
+            base: "1fr",
+            md: "repeat(2, 1fr)",
+          }}
+          m={4}
+          css={{
+            "& > *:last-child:nth-child(odd)": {
+              gridColumn: "1 / -1",
+            },
+          }}
+        >
+          {selectedMenu!.map((meal) => (
+            <Box>
               <Box
-                rounded="full"
-                bg="bg"
-                w={4}
-                h={4}
-                right={2}
-                top={2}
-                position="absolute"
+                bg="accent.300"
+                px={4}
+                pt={4}
+                pb={2}
+                rounded="xl"
+                position="relative"
+                boxShadow="lg"
                 border="2px solid"
-              ></Box>
-
-              <Text position="absolute" fontSize={16} bottom={2} left={2}>
-                {parseInt(meal.meal.mealNumber) + 1}
-              </Text>
-              <Text position="absolute" right={2} bottom={2}>
-                ฿{meal.pickedMeal.price}
-              </Text>
-              <VStack minW="16rem" h="full" justifyContent="space-between">
-                <Box>
-                  <Text
-                    fontSize={18}
-                    fontWeight="semibold"
-                    width="14ch"
-                    textAlign="center"
-                  >
-                    {meal.pickedMeal.name}
-                  </Text>
-                  <Text textAlign="center">@ {meal.store.name}</Text>
-                  <Text textAlign="center">{meal.store.canteenId}</Text>
-                </Box>
-                <Text mt={4}>
-                  {meal.meal.date} {meal.meal.date && meal.meal.time ? "|" : ""}{" "}
-                  {meal.meal.time}
-                </Text>
-              </VStack>
-            </Box>
-            <Flex
-              bg="brand.300"
-              rounded="lg"
-              minH={14}
-              pt={4}
-              px={2}
-              mt={-4}
-              border="2px solid"
-              alignItems="center"
-            >
-              <HStack
-                textAlign="center"
-                h="full"
-                w="full"
-                justifyContent="space-between"
+                zIndex={2}
               >
-                <Text color="white">{meal.drinkMenu?.name}</Text>
-                <Text color="white">@ {meal.drinkStore?.name}</Text>
-                <Text color="white">฿{meal.drinkMenu?.price}</Text>
-              </HStack>
-            </Flex>
-          </Box>
-        ))}
-      </Grid>
-    </VStack>
+                <Box
+                  rounded="full"
+                  bg="bg"
+                  w={4}
+                  h={4}
+                  right={2}
+                  top={2}
+                  position="absolute"
+                  border="2px solid"
+                ></Box>
+
+                <Text position="absolute" fontSize={16} bottom={2} left={2}>
+                  {parseInt(meal.meal.mealNumber) + 1}
+                </Text>
+                <Text position="absolute" right={2} bottom={2}>
+                  ฿{meal.pickedMeal.price}
+                </Text>
+                <VStack minW="16rem" h="full" justifyContent="space-between">
+                  <VStack gap={1} mb={4}>
+                    <Text
+                      fontSize={18}
+                      fontWeight="semibold"
+                      width="14ch"
+                      textAlign="center"
+                    >
+                      {meal.pickedMeal.name}
+                    </Text>
+                    <Text textAlign="center">@ {meal.store.name}</Text>
+                    <Text textAlign="center">{meal.canteenName}</Text>
+                  </VStack>
+                  <Text>
+                    {meal.meal.date}{" "}
+                    {meal.meal.date && meal.meal.time ? "|" : ""}{" "}
+                    {meal.meal.time}
+                  </Text>
+                </VStack>
+              </Box>
+              <Flex
+                bg="brand.300"
+                rounded="lg"
+                minH={14}
+                pt={4}
+                px={2}
+                mt={-4}
+                border="2px solid"
+                alignItems="center"
+              >
+                <HStack
+                  textAlign="center"
+                  h="full"
+                  w="full"
+                  justifyContent="space-between"
+                >
+                  <Text color="white">{meal.drinkMenu?.name}</Text>
+                  <Text color="white">@ {meal.drinkStore?.name}</Text>
+                  <Text color="white">฿{meal.drinkMenu?.price}</Text>
+                </HStack>
+              </Flex>
+            </Box>
+          ))}
+        </Grid>
+      </VStack>
+      <Confetti mode="boom" particleCount={60} spreadDeg={120} y={0.3} />
+    </>
   );
 }
