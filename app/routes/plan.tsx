@@ -294,7 +294,6 @@ function selectRandomStores(
           filteredDrinkStores,
           drinkStoreSpecificSeed,
         )!;
-        console.log(pickedDrinkStore);
         drinkStoreSeedOffset++;
       } while (
         pickedDrinkStore &&
@@ -431,13 +430,14 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     criteria,
     selectedCanteenIds,
   );
+
   const selectedStoresForEachMeal = selectRandomStores(
     allStoresInCriteria,
     planId,
     priceRange,
   );
 
-  // assign cantten name to each store
+  // assign canteen name to each store
   selectedStoresForEachMeal.forEach((mealStore) => {
     const { foodStore } = mealStore;
     const canteen = filteredCanteens.find(

@@ -55,49 +55,35 @@ async function findMatchingStores(
           category: {
             not: "DRINK",
           },
-          OR: [
-            {
-              sub_category: {
-                equals: mealCriteria.filters!.noodles ? "noodles" : undefined,
-              },
-            },
-            {
-              sub_category: {
-                equals: mealCriteria.filters!.somtum_northeastern
-                  ? "somtum_northeastern"
-                  : undefined,
-              },
-            },
-            {
-              sub_category: {
-                equals: mealCriteria.filters!.chicken_rice
-                  ? "chicken_rice"
-                  : undefined,
-              },
-            },
-            {
-              sub_category: {
-                equals: mealCriteria.filters!.rice_curry
-                  ? "rice_curry"
-                  : undefined,
-              },
-            },
-            {
-              sub_category: {
-                equals: mealCriteria.filters!.steak ? "steak" : undefined,
-              },
-            },
-            {
-              sub_category: {
-                equals: mealCriteria.filters!.japanese ? "japanese" : undefined,
-              },
-            },
-            {
-              sub_category: {
-                equals: mealCriteria.filters!.others ? "others" : undefined,
-              },
-            },
-          ],
+          // Dynamically build the OR clause
+          ...(mealCriteria.filters &&
+          Object.values(mealCriteria.filters).some(Boolean)
+            ? {
+                OR: [
+                  mealCriteria.filters.noodles
+                    ? { sub_category: { equals: "noodles" } }
+                    : null,
+                  mealCriteria.filters.somtum_northeastern
+                    ? { sub_category: { equals: "somtum_northeastern" } }
+                    : null,
+                  mealCriteria.filters.chicken_rice
+                    ? { sub_category: { equals: "chicken_rice" } }
+                    : null,
+                  mealCriteria.filters.rice_curry
+                    ? { sub_category: { equals: "rice_curry" } }
+                    : null,
+                  mealCriteria.filters.steak
+                    ? { sub_category: { equals: "steak" } }
+                    : null,
+                  mealCriteria.filters.japanese
+                    ? { sub_category: { equals: "japanese" } }
+                    : null,
+                  mealCriteria.filters.others
+                    ? { sub_category: { equals: "others" } }
+                    : null,
+                ].filter(Boolean), // Remove null entries
+              }
+            : {}), // If no filters are active, omit the OR clause
         },
       },
     },
