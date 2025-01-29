@@ -38,34 +38,51 @@ const weekdays = [
 ];
 
 /**
- * Generates a deterministic random number generator function based on a seed.
+ * Xoshiro128** PRNG - A better quality PRNG than mulberry32
  */
-function mulberry32(a: number) {
+function xoshiro128ss(a: number) {
+  let state = new Uint32Array([
+    a,
+    a ^ 0x9e3779b9,
+    a ^ 0x85ebca6b,
+    a ^ 0xc2b2ae35,
+  ]);
+
   return function () {
-    let t = (a += 0x6d2b79f5);
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    let [s0, s1, s2, s3] = state;
+    let result = (s1 * 5) << 7;
+    result = (result ^ (result >>> 11)) >>> 0;
+
+    const t = s1 << 9;
+    s2 ^= s0;
+    s3 ^= s1;
+    s1 ^= s2;
+    s0 ^= s3;
+    s2 ^= t;
+    s3 = (s3 << 11) | (s3 >>> 21); // Rotate left
+
+    state = [s0, s1, s2, s3];
+    return result / 4294967296;
   };
 }
 
 /**
- * Generates a hash code from a string.
+ * Hashes a string into a deterministic seed.
  */
 function stringToHash(str: string) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0; // Convert to 32bit integer
+    hash = Math.imul(hash ^ str.charCodeAt(i), 0x5bd1e995);
+    hash ^= hash >>> 15;
   }
-  return hash;
+  return hash >>> 0; // Convert to unsigned 32-bit
 }
 
 /**
- * Shuffles an array deterministically using the Fisher-Yates algorithm.
+ * Shuffles an array deterministically using Fisher-Yates.
  */
 function shuffle<T>(array: T[], seed: number): T[] {
-  const rng = mulberry32(seed);
+  const rng = xoshiro128ss(seed);
   let m = array.length,
     t,
     i;
@@ -79,12 +96,15 @@ function shuffle<T>(array: T[], seed: number): T[] {
 }
 
 /**
- * Picks a random element from an array deterministically based on a seed.
+ * Picks a random element deterministically with more variation.
  */
 function seededRandomPick<T>(array: T[], seed: number): T {
-  const rng = mulberry32(seed);
-  let randomIndex = Math.floor(rng() * array.length);
-  return array[randomIndex];
+  const rng = xoshiro128ss(seed);
+
+  // Skip a few initial RNG values to improve distribution
+  for (let i = 0; i < 5; i++) rng();
+
+  return array[Math.floor(rng() * array.length)];
 }
 
 /**
@@ -265,7 +285,7 @@ function selectRandomStores(
     // Select drink store
     let drinkStoreSeedOffset = 0;
     let pickedDrinkStore: stores | undefined;
-    if (drinkStores.length > 0) {
+    if (filteredDrinkStores.length > 0) {
       do {
         const drinkStoreSpecificSeed = stringToHash(
           planId + mealInfo.mealNumber + "drink" + drinkStoreSeedOffset,
@@ -274,6 +294,7 @@ function selectRandomStores(
           filteredDrinkStores,
           drinkStoreSpecificSeed,
         )!;
+        console.log(pickedDrinkStore);
         drinkStoreSeedOffset++;
       } while (
         pickedDrinkStore &&
@@ -296,6 +317,9 @@ function selectRandomStores(
   return selectedStores;
 }
 
+const getMenuItemId = (menu: StoresMenu) =>
+  `${menu.name}-${menu.category}-${menu.price}`;
+
 /**
  * Picks a meal and drink deterministically from a store's menu, avoiding duplicates.
  * Now returns both drink item and its store
@@ -309,9 +333,6 @@ function pickMealAndDrink(
   usedDrinks: Set<string>,
   planId: string,
 ) {
-  const getMenuItemId = (menu: StoresMenu) =>
-    `${menu.name}-${menu.category}-${menu.price}`;
-
   let drinkEntry: StoresMenu | undefined;
   if (withBeverage) {
     let drinkSeedOffset = 0;
@@ -346,9 +367,11 @@ function pickMealAndDrink(
     mealSeedOffset < filteredMenu.length + 1
   );
 
-  if (pickedFood) {
-    usedMeals.add(getMenuItemId(pickedFood));
+  if (!pickedFood) {
+    pickedFood = filteredMenu[0];
   }
+
+  usedMeals.add(getMenuItemId(pickedFood));
 
   return {
     pickedFood,
@@ -469,16 +492,19 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
       planId,
     );
 
-    const storeWithoutMenu = (({ menu, ...rest }) => rest)(foodStore);
-
     return {
       meal,
       canteenName,
-      store: storeWithoutMenu,
+      store: foodStore,
       pickedMeal: pickedFood,
       drinkMenu: pickedDrink,
       drinkStore: drinkStore ? (({ menu, ...rest }) => rest)(drinkStore) : null,
     };
+  });
+
+  // remove menu object from store object
+  selectedMenu.forEach((meal) => {
+    meal.store = (({ menu, ...rest }) => rest)(meal.store) as stores;
   });
 
   return {

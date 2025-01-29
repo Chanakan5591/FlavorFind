@@ -55,6 +55,49 @@ async function findMatchingStores(
           category: {
             not: "DRINK",
           },
+          OR: [
+            {
+              sub_category: {
+                equals: mealCriteria.filters!.noodles ? "noodles" : undefined,
+              },
+            },
+            {
+              sub_category: {
+                equals: mealCriteria.filters!.somtum_northeastern
+                  ? "somtum_northeastern"
+                  : undefined,
+              },
+            },
+            {
+              sub_category: {
+                equals: mealCriteria.filters!.chicken_rice
+                  ? "chicken_rice"
+                  : undefined,
+              },
+            },
+            {
+              sub_category: {
+                equals: mealCriteria.filters!.rice_curry
+                  ? "rice_curry"
+                  : undefined,
+              },
+            },
+            {
+              sub_category: {
+                equals: mealCriteria.filters!.steak ? "steak" : undefined,
+              },
+            },
+            {
+              sub_category: {
+                equals: mealCriteria.filters!.japanese ? "japanese" : undefined,
+              },
+            },
+            {
+              sub_category: {
+                equals: mealCriteria.filters!.others ? "others" : undefined,
+              },
+            },
+          ],
         },
       },
     },
