@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValueText,
 } from "~/components/ui/select";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useFetcher, useSubmit } from "react-router";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import { useCookies } from "react-cookie";
@@ -275,6 +275,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   });
 
   const [filters, setFilters] = useAtom(filtersAtom);
+
+  const id = useId();
 
   useEffect(() => {}, [priceSlider.value]);
 

@@ -530,13 +530,13 @@ export default function NewPlan({ loaderData }: Route.ComponentProps) {
           }}
           m={4}
           css={{
-            "& > *:last-child:nth-child(odd)": {
+            "& > *:last-child:nth-of-type(odd)": {
               gridColumn: "1 / -1",
             },
           }}
         >
           {selectedMenu!.map((meal) => (
-            <Box>
+            <Box key={meal.meal.mealNumber}>
               <Box
                 bg="accent.300"
                 px={4}

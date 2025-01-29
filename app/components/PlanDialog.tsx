@@ -34,6 +34,7 @@ import { createId } from "@paralleldrive/cuid2";
 import pako from "pako";
 import posthog from "posthog-js";
 import { useCookies } from "react-cookie";
+import { useId } from "react";
 
 type Inputs = {
   meals: Array<{
@@ -60,6 +61,8 @@ export function PlanDialog() {
   const navigate = useNavigate();
 
   const [cookies, setCookies] = useCookies(["nomnom"]);
+
+  const id = useId();
 
   const {
     register,
