@@ -1,5 +1,5 @@
 import { Button } from "./ui/button";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   DialogActionTrigger,
   DialogBody,
@@ -156,6 +156,43 @@ export function PlanDialog() {
     navigate(`/plan/${encodedParam}/${await compressAndEncode(createId())}`);
   };
 
+  // Use refs to store the last valid values
+  const lastValidMealsPlanningAmount = useRef(mealsPlanningAmount);
+  const lastValidTotalPlannedBudgets = useRef(totalPlannedBudgets);
+
+  // Function to handle input change with debouncing
+  const handleInputChange = (
+    setter: (value: number) => void,
+    lastValidValueRef: React.MutableRefObject<number>,
+    min: number,
+    max: number,
+  ) => {
+    let timeoutId: NodeJS.Timeout;
+    return (e: { value: string }) => {
+      clearTimeout(timeoutId);
+      const inputValue = e.value;
+
+      timeoutId = setTimeout(() => {
+        const parsedValue = parseInt(inputValue);
+        if (!isNaN(parsedValue) && parsedValue >= min && parsedValue <= max) {
+          setter(parsedValue);
+          lastValidValueRef.current = parsedValue;
+        } else {
+          setter(lastValidValueRef.current);
+        }
+      }, 500); // 500ms debounce time
+    };
+  };
+
+  // Update refs when the atom values change
+  useEffect(() => {
+    lastValidMealsPlanningAmount.current = mealsPlanningAmount;
+  }, [mealsPlanningAmount]);
+
+  useEffect(() => {
+    lastValidTotalPlannedBudgets.current = totalPlannedBudgets;
+  }, [totalPlannedBudgets]);
+
   return (
     <DialogRoot>
       <DialogTrigger asChild>
@@ -179,13 +216,16 @@ export function PlanDialog() {
                   min={1}
                   max={5}
                   value={mealsPlanningAmount.toString()}
-                  onValueChange={(e) =>
-                    setMealsPlanningAmount(
-                      parseInt(e.value) as 1 | 2 | 3 | 4 | 5,
-                    )
-                  }
+                  onValueChange={handleInputChange(
+                    setMealsPlanningAmount,
+                    lastValidMealsPlanningAmount,
+                    1,
+                    5,
+                  )}
                 >
-                  <NumberInputField value={mealsPlanningAmount} />
+                  <NumberInputField
+                    value={lastValidMealsPlanningAmount.current}
+                  />
                 </NumberInputRoot>
               </Field>
               <Field
@@ -198,11 +238,16 @@ export function PlanDialog() {
                   min={5}
                   max={1000}
                   value={totalPlannedBudgets.toString()}
-                  onValueChange={(e) =>
-                    setTotalPlannedBudgets(parseInt(e.value))
-                  }
+                  onValueChange={handleInputChange(
+                    setTotalPlannedBudgets,
+                    lastValidTotalPlannedBudgets,
+                    5,
+                    1000,
+                  )}
                 >
-                  <NumberInputField value={totalPlannedBudgets} />
+                  <NumberInputField
+                    value={lastValidTotalPlannedBudgets.current}
+                  />
                 </NumberInputRoot>
               </Field>
             </Grid>

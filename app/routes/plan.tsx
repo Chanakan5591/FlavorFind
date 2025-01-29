@@ -3,7 +3,7 @@ import { useParams, type LoaderFunctionArgs } from "react-router";
 import pako from "pako";
 import prisma from "~/db.server";
 import { findMatchingStores } from "~/util/datentime.server";
-import type { stores, StoresMenu } from "@prisma/client";
+import type { stores, StoresMenu } from "@prisma/ffdb";
 import { Box, Flex, Grid, HStack, Text, VStack } from "@chakra-ui/react";
 
 const mappings = {
@@ -199,63 +199,100 @@ async function filterAndShuffleCanteens(
   return filteredCanteens;
 }
 
+interface Meal {
+  mealNumber: string;
+  date?: string;
+  dayOfWeek?: string;
+  time?: string;
+}
+
+interface AvailableStoresForMeal {
+  meal: Meal;
+  foodStores: stores[];
+  drinkStores: stores[];
+}
+
+interface SpecificStoreWithMeal {
+  meal: Meal;
+  foodStore: stores;
+  drinkStore: stores;
+}
+
 /**
  * Selects a random store for each meal deterministically, ensuring at least one store sells a drink.
  */
 function selectRandomStores(
-  mealsStores: Awaited<ReturnType<typeof findMatchingStores>>,
+  mealsStores: AvailableStoresForMeal[],
   planId: string,
+  priceRange: number[],
 ) {
-  const seedHash = stringToHash(planId);
+  const selectedStores: SpecificStoreWithMeal[] = [];
+  const usedFoodStores: Set<string> = new Set();
+  const usedDrinkStores: Set<string> = new Set();
+  let foundStoreWithBeverage = false;
 
-  // 1. Find stores that have drinks
-  const storesWithDrinks = new Set<stores>(); // Assuming 'Store' is the type of your store objects
-  for (const mealData of mealsStores) {
-    for (const store of mealData.stores) {
-      if (store.menu && store.menu.some((item) => item.category === "DRINK")) {
-        storesWithDrinks.add(store);
+  for (const mealStore of mealsStores) {
+    const { meal: mealInfo, foodStores, drinkStores } = mealStore;
+
+    let canteenSelectedForFood: string;
+
+    // Select food store
+    let foodStoreSeedOffset = 0;
+    let pickedFoodStore: stores | undefined;
+    do {
+      const foodStoreSpecificSeed = stringToHash(
+        planId + mealInfo.mealNumber + foodStoreSeedOffset,
+      );
+      pickedFoodStore = seededRandomPick(foodStores, foodStoreSpecificSeed)!;
+      foodStoreSeedOffset++;
+    } while (
+      pickedFoodStore &&
+      usedFoodStores.has(pickedFoodStore.id) &&
+      foodStoreSeedOffset < foodStores.length + 1
+    );
+
+    if (pickedFoodStore) {
+      canteenSelectedForFood = pickedFoodStore.canteenId;
+      usedFoodStores.add(pickedFoodStore.id);
+    }
+
+    // Filter drink stores based on the selected food store's canteen
+    const filteredDrinkStores = drinkStores.filter(
+      (store) => store.canteenId === canteenSelectedForFood,
+    );
+
+    // Select drink store
+    let drinkStoreSeedOffset = 0;
+    let pickedDrinkStore: stores | undefined;
+    if (drinkStores.length > 0) {
+      do {
+        const drinkStoreSpecificSeed = stringToHash(
+          planId + mealInfo.mealNumber + "drink" + drinkStoreSeedOffset,
+        );
+        pickedDrinkStore = seededRandomPick(
+          filteredDrinkStores,
+          drinkStoreSpecificSeed,
+        )!;
+        drinkStoreSeedOffset++;
+      } while (
+        pickedDrinkStore &&
+        usedDrinkStores.has(pickedDrinkStore.id) &&
+        drinkStoreSeedOffset < drinkStores.length + 1
+      );
+
+      if (pickedDrinkStore) {
+        usedDrinkStores.add(pickedDrinkStore.id);
       }
     }
-  }
 
-  // 2. If no stores have drinks, fall back to the original logic (or handle it differently)
-  if (storesWithDrinks.size === 0) {
-    console.warn(
-      "No stores with drinks found. Using original selection logic.",
-    );
-    return mealsStores.map((mealData, index) => {
-      const mealSeed = seedHash + index;
-      const selectedStore = seededRandomPick(mealData.stores, mealSeed);
-      return { meal: mealData.meal, store: selectedStore };
+    selectedStores.push({
+      meal: mealInfo,
+      foodStore: pickedFoodStore!,
+      drinkStore: pickedDrinkStore!, // This will handle scenarios where a drink store is not found
     });
   }
 
-  // 3. Deterministically select a store with drinks
-  const drinkStoreIndex = seedHash % storesWithDrinks.size;
-  const selectedDrinkStore = Array.from(storesWithDrinks)[drinkStoreIndex];
-
-  // 4. Assign the drink store to a random meal (deterministically)
-  const mealWithDrinkIndex = seedHash % mealsStores.length;
-
-  // 5. Select stores for other meals, avoiding the drink store if it's already assigned
-  return mealsStores.map((mealData, index) => {
-    if (index === mealWithDrinkIndex) {
-      return { meal: mealData.meal, store: selectedDrinkStore };
-    } else {
-      const availableStores = mealData.stores.filter(
-        (store) => store !== selectedDrinkStore,
-      );
-
-      // If no other stores are available after removing the drink store, it means the drink store was the only one possible for this meal.
-      // In this edge case, we will still use the drink store, as no better option exists
-      const storesToPickFrom =
-        availableStores.length > 0 ? availableStores : mealData.stores;
-
-      const mealSeed = seedHash + index;
-      const selectedStore = seededRandomPick(storesToPickFrom, mealSeed);
-      return { meal: mealData.meal, store: selectedStore };
-    }
-  });
+  return selectedStores;
 }
 
 /**
@@ -264,9 +301,9 @@ function selectRandomStores(
  */
 function pickMealAndDrink(
   withBeverage: boolean,
-  store: (typeof selectedStores)[number]["store"],
+  foodStore: stores,
   filteredMenu: StoresMenu[],
-  drinkOptions: Array<{ store: stores; drink: StoresMenu }>, // Changed type
+  drinkOptions: StoresMenu[],
   usedMeals: Set<string>,
   usedDrinks: Set<string>,
   planId: string,
@@ -274,48 +311,47 @@ function pickMealAndDrink(
   const getMenuItemId = (menu: StoresMenu) =>
     `${menu.name}-${menu.category}-${menu.price}`;
 
-  let drinkEntry: { store: stores; drink: StoresMenu } | undefined;
+  let drinkEntry: StoresMenu | undefined;
   if (withBeverage) {
     let drinkSeedOffset = 0;
     do {
       const drinkSpecificSeed = stringToHash(
-        store.id + planId + "drink" + drinkSeedOffset,
+        foodStore.id + planId + "drink" + drinkSeedOffset,
       );
       drinkEntry = seededRandomPick(drinkOptions, drinkSpecificSeed);
       drinkSeedOffset++;
     } while (
       drinkEntry &&
-      usedDrinks.has(getMenuItemId(drinkEntry.drink)) &&
+      usedDrinks.has(getMenuItemId(drinkEntry)) &&
       drinkSeedOffset < drinkOptions.length + 1
     );
 
     if (drinkEntry) {
-      usedDrinks.add(getMenuItemId(drinkEntry.drink));
+      usedDrinks.add(getMenuItemId(drinkEntry));
     }
   }
 
-  let pickedMeal: StoresMenu | undefined;
+  let pickedFood: StoresMenu | undefined;
   let mealSeedOffset = 0;
   do {
     const mealSpecificSeed = stringToHash(
-      store.id + planId + "meal" + mealSeedOffset,
+      foodStore.id + planId + "meal" + mealSeedOffset,
     );
-    pickedMeal = seededRandomPick(filteredMenu, mealSpecificSeed);
+    pickedFood = seededRandomPick(filteredMenu, mealSpecificSeed);
     mealSeedOffset++;
   } while (
-    pickedMeal &&
-    usedMeals.has(getMenuItemId(pickedMeal)) &&
+    pickedFood &&
+    usedMeals.has(getMenuItemId(pickedFood)) &&
     mealSeedOffset < filteredMenu.length + 1
   );
 
-  if (pickedMeal) {
-    usedMeals.add(getMenuItemId(pickedMeal));
+  if (pickedFood) {
+    usedMeals.add(getMenuItemId(pickedFood));
   }
 
   return {
-    pickedMeal,
-    drinkMenu: drinkEntry?.drink,
-    drinkStore: drinkEntry?.store, // Add drink store
+    pickedFood,
+    pickedDrink: drinkEntry,
   };
 }
 
@@ -367,16 +403,31 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     meals,
   };
 
-  const mealsStores = await findMatchingStores(criteria, selectedCanteenIds);
-  const selectedStores = selectRandomStores(mealsStores, planId);
+  const allStoresInCriteria = await findMatchingStores(
+    criteria,
+    selectedCanteenIds,
+  );
+  const selectedStores = selectRandomStores(
+    allStoresInCriteria,
+    planId,
+    priceRange,
+  );
 
   const usedMeals: Set<string> = new Set();
   const usedDrinks: Set<string> = new Set();
 
   const selectedMenu = selectedStores.map((mealStore) => {
-    const { meal, store } = mealStore;
+    const { meal, foodStore, drinkStore } = mealStore;
 
-    const filteredMenu = store.menu.filter(
+    const drinkOptions = drinkStore.menu.filter(
+      (menu) =>
+        menu.category === "DRINK" &&
+        menu.price >= priceRange[0] &&
+        menu.price <= priceRange[1] &&
+        menu.sub_category !== "toppings",
+    );
+
+    const filteredMenu = foodStore.menu.filter(
       (menu) =>
         menu.price >= priceRange[0] &&
         menu.price <= priceRange[1] &&
@@ -398,31 +449,23 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
             !filters.others)),
     );
 
-    const drinkOptions = selectedStores.flatMap((s) =>
-      s.store.menu
-        .filter(
-          (menu) =>
-            menu.category === "DRINK" && menu.price <= totalPlannedBudgets,
-        )
-        .map((drink) => ({ store: s.store, drink })),
-    );
-
-    const { pickedMeal, drinkMenu, drinkStore } = pickMealAndDrink(
+    const { pickedFood, pickedDrink } = pickMealAndDrink(
       withBeverage,
-      store,
+      foodStore,
       filteredMenu,
       drinkOptions, // Pass modified drink options
       usedMeals,
       usedDrinks,
       planId,
     );
-    const storeWithoutMenu = (({ menu, ...rest }) => rest)(store);
+
+    const storeWithoutMenu = (({ menu, ...rest }) => rest)(foodStore);
 
     return {
       meal,
       store: storeWithoutMenu,
-      pickedMeal,
-      drinkMenu,
+      pickedMeal: pickedFood,
+      drinkMenu: pickedDrink,
       drinkStore: drinkStore ? (({ menu, ...rest }) => rest)(drinkStore) : null,
     };
   });
@@ -436,7 +479,6 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
 export default function NewPlan({ loaderData }: Route.ComponentProps) {
   const selectedMenu = loaderData.selectedMenu;
-  console.log(selectedMenu);
 
   return (
     <VStack>
@@ -497,6 +539,7 @@ export default function NewPlan({ loaderData }: Route.ComponentProps) {
                     {meal.pickedMeal.name}
                   </Text>
                   <Text textAlign="center">@ {meal.store.name}</Text>
+                  <Text textAlign="center">{meal.store.canteenId}</Text>
                 </Box>
                 <Text mt={4}>
                   {meal.meal.date} {meal.meal.date && meal.meal.time ? "|" : ""}{" "}
