@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "cross-env NODE_ENV=production react-router build && node vercel/prepare.js",
+    "build": "cross-env NODE_ENV=production NODE_OPTIONS='--import=./instrument.server.mjs' react-router build && node vercel/prepare.js",
     "postinstall": "prisma generate",
     "dev": "react-router dev",
     "start": "cross-env NODE_ENV=production react-router-serve ./build/server/index.js",
@@ -17,6 +17,8 @@
     "@prisma/client": "^6.0.1",
     "@react-router/node": "7.1.2-pre.0",
     "@react-router/serve": "7.1.2-pre.0",
+    "@sentry/remix": "^8",
+    "@sentry/vite-plugin": "^3.1.0",
     "@types/pako": "^2.0.3",
     "brotli-wasm": "^3.0.1",
     "express": "^4.21.2",

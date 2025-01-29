@@ -1,3 +1,4 @@
+import { withSentry } from "@sentry/remix";
 import {
   isRouteErrorResponse,
   Links,
@@ -45,7 +46,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function App() {
+function App() {
   return (
     <Provider>
       <ColorModeProvider>
@@ -76,6 +77,8 @@ export default function App() {
     </Provider>
   );
 }
+
+export default withSentry(App);
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let message = "Oops!";

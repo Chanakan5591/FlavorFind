@@ -12,3 +12,6 @@ tsconfig.json.orig
 .vercel
 .yarn
 dump/
+
+# Sentry Config File
+.env.sentry-build-plugin
