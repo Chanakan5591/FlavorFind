@@ -137,7 +137,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   const [selectedCanteens, setSelectedCanteens] = useAtom(selectedCanteensAtom);
   const [priceRange, setPriceRange] = useAtom(priceRangeAtom);
-  const [cookies, setCookie] = useCookies(["nomnom", "science"]);
+  const [cookies, setCookie] = useCookies(["nomnom"]);
 
   const [firstTime, setFirstTime] = useState(false);
   const [clientFingerprint, setClientFingerprint] = useState("");

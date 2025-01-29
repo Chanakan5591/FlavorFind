@@ -32,6 +32,8 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { useAtomValue } from "jotai";
 import { createId } from "@paralleldrive/cuid2";
 import pako from "pako";
+import posthog from "posthog-js";
+import { useCookies } from "react-cookie";
 
 type Inputs = {
   meals: Array<{
@@ -56,6 +58,8 @@ export function PlanDialog() {
 
   const fetcher = useFetcher();
   const navigate = useNavigate();
+
+  const [cookies, setCookies] = useCookies(["nomnom"]);
 
   const {
     register,
@@ -152,8 +156,13 @@ export function PlanDialog() {
     }
 
     const encodedParam = await compressAndEncode(newPlanParams);
-    console.log(newPlanParams);
-    navigate(`/plan/${encodedParam}/${await compressAndEncode(createId())}`);
+
+    posthog.capture("user_planned_meal", {
+      client: cookies["nomnom"],
+      param: encodedParam,
+    });
+
+    navigate(`/plan/${encodedParam}/${createId()}`);
   };
 
   // Use refs to store the last valid values
@@ -193,10 +202,16 @@ export function PlanDialog() {
     lastValidTotalPlannedBudgets.current = totalPlannedBudgets;
   }, [totalPlannedBudgets]);
 
+  const userClickedPlan = () => {
+    posthog.capture("user_clicked_plan", {
+      client: cookies["nomnom"],
+    });
+  };
+
   return (
     <DialogRoot>
       <DialogTrigger asChild>
-        <Button>Plan a Meal</Button>
+        <Button onClick={userClickedPlan}>Plan a Meal</Button>
       </DialogTrigger>
 
       <DialogContent>

@@ -17,6 +17,7 @@ import "./global.css";
 
 import { Box } from "@chakra-ui/react";
 import { Toaster } from "./components/ui/toaster";
+import PostHogPageView from "./util/pageview";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://typefaces.chanakancloud.net" },
@@ -69,6 +70,7 @@ export default function App() {
         >
           <Navbar />
           <Outlet />
+          <PostHogPageView />
         </Box>
       </ColorModeProvider>
     </Provider>
