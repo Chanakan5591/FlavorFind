@@ -13,7 +13,7 @@
  *
  * Copyright 2025 Chanakan Moongthin.
  */
-import { withSentry } from "@sentry/remix";
+import * as Sentry from "@sentry/react";
 import {
   isRouteErrorResponse,
   Links,
@@ -61,7 +61,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-function App() {
+export default function App() {
   return (
     <Provider>
       <ColorModeProvider>
@@ -93,8 +93,6 @@ function App() {
   );
 }
 
-export default withSentry(App);
-
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let message = "Oops!";
   let details = "An unexpected error occurred.";
@@ -106,9 +104,12 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       error.status === 404
         ? "The requested page could not be found."
         : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
-    stack = error.stack;
+  } else if (error && error instanceof Error) {
+    Sentry.captureException(error)Sentry.captureException(error);;
+    if (import.meta.env.DEV) {
+      details = error.message;
+      stack = error.stack;
+    }
   }
 
   return (

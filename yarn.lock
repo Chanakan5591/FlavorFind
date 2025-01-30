@@ -1526,15 +1526,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@opentelemetry/api-logs@npm:0.52.1":
-  version: 0.52.1
-  resolution: "@opentelemetry/api-logs@npm:0.52.1"
-  dependencies:
-    "@opentelemetry/api": "npm:^1.0.0"
-  checksum: 10c0/fddecb2211f987bf1a7f104594e58227655c887a6a22b41e9ead5ed925a4594b56186b38fca8e24db33058a924d8b54ddd6b315eca915c469f9653ce7813c31a
-  languageName: node
-  linkType: hard
-
 "@opentelemetry/api-logs@npm:0.53.0":
   version: 0.53.0
   resolution: "@opentelemetry/api-logs@npm:0.53.0"
@@ -1927,22 +1918,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@opentelemetry/instrumentation@npm:^0.52.1":
-  version: 0.52.1
-  resolution: "@opentelemetry/instrumentation@npm:0.52.1"
-  dependencies:
-    "@opentelemetry/api-logs": "npm:0.52.1"
-    "@types/shimmer": "npm:^1.0.2"
-    import-in-the-middle: "npm:^1.8.1"
-    require-in-the-middle: "npm:^7.1.1"
-    semver: "npm:^7.5.2"
-    shimmer: "npm:^1.2.1"
-  peerDependencies:
-    "@opentelemetry/api": ^1.3.0
-  checksum: 10c0/1d4946b470ac31358ba8d81a9f9653a1d705db96ffb8958fef873340c3d3c9699cfd8ff617c313ea8c6a8ece51aa7cf8af37d87a60813c31ed2207e5c14a33ba
-  languageName: node
-  linkType: hard
-
 "@opentelemetry/redis-common@npm:^0.36.2":
   version: 0.36.2
   resolution: "@opentelemetry/redis-common@npm:0.36.2"
@@ -1982,7 +1957,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@opentelemetry/semantic-conventions@npm:1.28.0, @opentelemetry/semantic-conventions@npm:^1.25.1, @opentelemetry/semantic-conventions@npm:^1.27.0, @opentelemetry/semantic-conventions@npm:^1.28.0":
+"@opentelemetry/semantic-conventions@npm:1.28.0, @opentelemetry/semantic-conventions@npm:^1.27.0, @opentelemetry/semantic-conventions@npm:^1.28.0":
   version: 1.28.0
   resolution: "@opentelemetry/semantic-conventions@npm:1.28.0"
   checksum: 10c0/deb8a0f744198071e70fea27143cf7c9f7ecb7e4d7b619488c917834ea09b31543c1c2bcea4ec5f3cf68797f0ef3549609c14e859013d9376400ac1499c2b9cb
@@ -2215,13 +2190,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@remix-run/router@npm:1.x":
-  version: 1.21.1
-  resolution: "@remix-run/router@npm:1.21.1"
-  checksum: 10c0/a90e62c6f18e53d8a1f39de8aaebe3abd340ea085a761296f4fddda23bd3ad133f9adf0190392e0b02933761180b484e7fc052447a6a8482c52207fcecbf9a90
-  languageName: node
-  linkType: hard
-
 "@rollup/rollup-android-arm-eabi@npm:4.28.1":
   version: 4.28.1
   resolution: "@rollup/rollup-android-arm-eabi@npm:4.28.1"
@@ -2436,23 +2404,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sentry/cli-darwin@npm:2.41.1":
-  version: 2.41.1
-  resolution: "@sentry/cli-darwin@npm:2.41.1"
-  conditions: os=darwin
-  languageName: node
-  linkType: hard
-
 "@sentry/cli-linux-arm64@npm:2.39.1":
   version: 2.39.1
   resolution: "@sentry/cli-linux-arm64@npm:2.39.1"
-  conditions: (os=linux | os=freebsd) & cpu=arm64
-  languageName: node
-  linkType: hard
-
-"@sentry/cli-linux-arm64@npm:2.41.1":
-  version: 2.41.1
-  resolution: "@sentry/cli-linux-arm64@npm:2.41.1"
   conditions: (os=linux | os=freebsd) & cpu=arm64
   languageName: node
   linkType: hard
@@ -2464,23 +2418,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sentry/cli-linux-arm@npm:2.41.1":
-  version: 2.41.1
-  resolution: "@sentry/cli-linux-arm@npm:2.41.1"
-  conditions: (os=linux | os=freebsd) & cpu=arm
-  languageName: node
-  linkType: hard
-
 "@sentry/cli-linux-i686@npm:2.39.1":
   version: 2.39.1
   resolution: "@sentry/cli-linux-i686@npm:2.39.1"
-  conditions: (os=linux | os=freebsd) & (cpu=x86 | cpu=ia32)
-  languageName: node
-  linkType: hard
-
-"@sentry/cli-linux-i686@npm:2.41.1":
-  version: 2.41.1
-  resolution: "@sentry/cli-linux-i686@npm:2.41.1"
   conditions: (os=linux | os=freebsd) & (cpu=x86 | cpu=ia32)
   languageName: node
   linkType: hard
@@ -2492,13 +2432,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sentry/cli-linux-x64@npm:2.41.1":
-  version: 2.41.1
-  resolution: "@sentry/cli-linux-x64@npm:2.41.1"
-  conditions: (os=linux | os=freebsd) & cpu=x64
-  languageName: node
-  linkType: hard
-
 "@sentry/cli-win32-i686@npm:2.39.1":
   version: 2.39.1
   resolution: "@sentry/cli-win32-i686@npm:2.39.1"
@@ -2506,23 +2439,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sentry/cli-win32-i686@npm:2.41.1":
-  version: 2.41.1
-  resolution: "@sentry/cli-win32-i686@npm:2.41.1"
-  conditions: os=win32 & (cpu=x86 | cpu=ia32)
-  languageName: node
-  linkType: hard
-
 "@sentry/cli-win32-x64@npm:2.39.1":
   version: 2.39.1
   resolution: "@sentry/cli-win32-x64@npm:2.39.1"
-  conditions: os=win32 & cpu=x64
-  languageName: node
-  linkType: hard
-
-"@sentry/cli-win32-x64@npm:2.41.1":
-  version: 2.41.1
-  resolution: "@sentry/cli-win32-x64@npm:2.41.1"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
@@ -2564,43 +2483,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sentry/cli@npm:^2.39.1":
-  version: 2.41.1
-  resolution: "@sentry/cli@npm:2.41.1"
-  dependencies:
-    "@sentry/cli-darwin": "npm:2.41.1"
-    "@sentry/cli-linux-arm": "npm:2.41.1"
-    "@sentry/cli-linux-arm64": "npm:2.41.1"
-    "@sentry/cli-linux-i686": "npm:2.41.1"
-    "@sentry/cli-linux-x64": "npm:2.41.1"
-    "@sentry/cli-win32-i686": "npm:2.41.1"
-    "@sentry/cli-win32-x64": "npm:2.41.1"
-    https-proxy-agent: "npm:^5.0.0"
-    node-fetch: "npm:^2.6.7"
-    progress: "npm:^2.0.3"
-    proxy-from-env: "npm:^1.1.0"
-    which: "npm:^2.0.2"
-  dependenciesMeta:
-    "@sentry/cli-darwin":
-      optional: true
-    "@sentry/cli-linux-arm":
-      optional: true
-    "@sentry/cli-linux-arm64":
-      optional: true
-    "@sentry/cli-linux-i686":
-      optional: true
-    "@sentry/cli-linux-x64":
-      optional: true
-    "@sentry/cli-win32-i686":
-      optional: true
-    "@sentry/cli-win32-x64":
-      optional: true
-  bin:
-    sentry-cli: bin/sentry-cli
-  checksum: 10c0/42b33b6a45c2380a25f6f00ad4c81135ff6604e38b52b9399fbd611c92bf1ec471abf118d2e83ec3e72ad6436634f638575f1fa89be215e5a1a1831adb0e55c5
-  languageName: node
-  linkType: hard
-
 "@sentry/core@npm:8.52.0":
   version: 8.52.0
   resolution: "@sentry/core@npm:8.52.0"
@@ -2608,7 +2490,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sentry/node@npm:8.52.0":
+"@sentry/node@npm:8.52.0, @sentry/node@npm:^8.52.0":
   version: 8.52.0
   resolution: "@sentry/node@npm:8.52.0"
   dependencies:
@@ -2666,7 +2548,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sentry/react@npm:8.52.0":
+"@sentry/profiling-node@npm:^8.52.0":
+  version: 8.52.0
+  resolution: "@sentry/profiling-node@npm:8.52.0"
+  dependencies:
+    "@sentry/core": "npm:8.52.0"
+    "@sentry/node": "npm:8.52.0"
+    detect-libc: "npm:^2.0.2"
+    node-abi: "npm:^3.61.0"
+    node-gyp: "npm:latest"
+  bin:
+    sentry-prune-profiler-binaries: scripts/prune-profiler-binaries.js
+  checksum: 10c0/4787a1606c89bf4812a60de41e1f622284305e684e3af955661c91e4b85bebb6aaac0fcacd2a7c4c41ffc784e4539e1565b67e7c0d8cdf6adf5fcb582698dcea
+  languageName: node
+  linkType: hard
+
+"@sentry/react@npm:^8.52.0":
   version: 8.52.0
   resolution: "@sentry/react@npm:8.52.0"
   dependencies:
@@ -2676,30 +2573,6 @@ __metadata:
   peerDependencies:
     react: ^16.14.0 || 17.x || 18.x || 19.x
   checksum: 10c0/555407dd5a08a1e515be85b6ba0037f14c7df06ef1cfda22557be26123ab2e753da20867a1ec704946aa3ae8f55e299d74ce9eb433f3c0ffe25586f3ee94fbb8
-  languageName: node
-  linkType: hard
-
-"@sentry/remix@npm:^8":
-  version: 8.52.0
-  resolution: "@sentry/remix@npm:8.52.0"
-  dependencies:
-    "@opentelemetry/api": "npm:^1.9.0"
-    "@remix-run/router": "npm:1.x"
-    "@sentry/cli": "npm:^2.39.1"
-    "@sentry/core": "npm:8.52.0"
-    "@sentry/node": "npm:8.52.0"
-    "@sentry/opentelemetry": "npm:8.52.0"
-    "@sentry/react": "npm:8.52.0"
-    glob: "npm:^10.3.4"
-    opentelemetry-instrumentation-remix: "npm:0.8.0"
-    yargs: "npm:^17.6.0"
-  peerDependencies:
-    "@remix-run/node": 1.x || 2.x
-    "@remix-run/react": 1.x || 2.x
-    react: 16.x || 17.x || 18.x
-  bin:
-    sentry-upload-sourcemaps: scripts/sentry-upload-sourcemaps.js
-  checksum: 10c0/637a41498fe39a2146ca8a4d0b27cd4972edd59b3de3639ae5293115ce9dbcab717759e66b254b2e0d7fd6d48005bc3eb19550c2a53b2e7335937c4533f0ab8e
   languageName: node
   linkType: hard
 
@@ -2913,7 +2786,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/shimmer@npm:^1.0.2, @types/shimmer@npm:^1.2.0":
+"@types/shimmer@npm:^1.2.0":
   version: 1.2.0
   resolution: "@types/shimmer@npm:1.2.0"
   checksum: 10c0/6f7bfe1b55601cfc3ae713fc74a03341f3834253b8b91cb2add926d5949e4a63f7e666f59c2a6e40a883a5f9e2f3e3af10f9d3aed9b60fced0bda87659e58d8d
@@ -4209,17 +4082,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cliui@npm:^8.0.1":
-  version: 8.0.1
-  resolution: "cliui@npm:8.0.1"
-  dependencies:
-    string-width: "npm:^4.2.0"
-    strip-ansi: "npm:^6.0.1"
-    wrap-ansi: "npm:^7.0.0"
-  checksum: 10c0/4bda0f09c340cbb6dfdc1ed508b3ca080f12992c18d68c6be4d9cf51756033d5266e61ec57529e610dacbf4da1c634423b0c1b11037709cc6b09045cbd815df5
-  languageName: node
-  linkType: hard
-
 "clone-regexp@npm:^3.0.0":
   version: 3.0.0
   resolution: "clone-regexp@npm:3.0.0"
@@ -4509,6 +4371,13 @@ __metadata:
   version: 1.2.0
   resolution: "destroy@npm:1.2.0"
   checksum: 10c0/bd7633942f57418f5a3b80d5cb53898127bcf53e24cdf5d5f4396be471417671f0fee48a4ebe9a1e9defbde2a31280011af58a57e090ff822f589b443ed4e643
+  languageName: node
+  linkType: hard
+
+"detect-libc@npm:^2.0.2":
+  version: 2.0.3
+  resolution: "detect-libc@npm:2.0.3"
+  checksum: 10c0/88095bda8f90220c95f162bf92cad70bd0e424913e655c20578600e35b91edc261af27531cf160a331e185c0ced93944bc7e09939143225f56312d7fd800fdb7
   languageName: node
   linkType: hard
 
@@ -4899,7 +4768,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"escalade@npm:^3.1.1, escalade@npm:^3.2.0":
+"escalade@npm:^3.2.0":
   version: 3.2.0
   resolution: "escalade@npm:3.2.0"
   checksum: 10c0/ced4dd3a78e15897ed3be74e635110bbf3b08877b0a41be50dcb325ee0e0b5f65fc2d50e9845194d7c4633f327e2e1c6cce00a71b617c5673df0374201d67f65
@@ -5080,7 +4949,9 @@ __metadata:
     "@react-router/dev": "npm:^7.0.2"
     "@react-router/node": "npm:7.1.2-pre.0"
     "@react-router/serve": "npm:7.1.2-pre.0"
-    "@sentry/remix": "npm:^8"
+    "@sentry/node": "npm:^8.52.0"
+    "@sentry/profiling-node": "npm:^8.52.0"
+    "@sentry/react": "npm:^8.52.0"
     "@sentry/vite-plugin": "npm:^3.1.0"
     "@t3-oss/env-core": "npm:^0.11.1"
     "@types/lodash": "npm:^4"
@@ -5244,13 +5115,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"get-caller-file@npm:^2.0.5":
-  version: 2.0.5
-  resolution: "get-caller-file@npm:2.0.5"
-  checksum: 10c0/c6c7b60271931fa752aeb92f2b47e355eac1af3a2673f47c9589e8f8a41adc74d45551c1bc57b5e66a80609f10ffb72b6f575e4370d61cc3f7f3aaff01757cde
-  languageName: node
-  linkType: hard
-
 "get-intrinsic@npm:^1.2.4, get-intrinsic@npm:^1.2.5":
   version: 1.2.6
   resolution: "get-intrinsic@npm:1.2.6"
@@ -5302,7 +5166,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"glob@npm:^10.2.2, glob@npm:^10.3.10, glob@npm:^10.3.4, glob@npm:^10.3.7":
+"glob@npm:^10.2.2, glob@npm:^10.3.10, glob@npm:^10.3.7":
   version: 10.4.5
   resolution: "glob@npm:10.4.5"
   dependencies:
@@ -6240,6 +6104,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"node-abi@npm:^3.61.0":
+  version: 3.73.0
+  resolution: "node-abi@npm:3.73.0"
+  dependencies:
+    semver: "npm:^7.3.5"
+  checksum: 10c0/4cd237f2507f80048310f381198a07387b11cbaab7dfac61ccc40cdc83f2296c647df02b5ddfead9f40b845c696f0ce75fdaa01973d3f3f0686151e4f96d2c8c
+  languageName: node
+  linkType: hard
+
 "node-domexception@npm:^1.0.0":
   version: 1.0.0
   resolution: "node-domexception@npm:1.0.0"
@@ -6451,18 +6324,6 @@ __metadata:
   dependencies:
     wrappy: "npm:1"
   checksum: 10c0/5d48aca287dfefabd756621c5dfce5c91a549a93e9fdb7b8246bc4c4790aa2ec17b34a260530474635147aeb631a2dcc8b32c613df0675f96041cbb8244517d0
-  languageName: node
-  linkType: hard
-
-"opentelemetry-instrumentation-remix@npm:0.8.0":
-  version: 0.8.0
-  resolution: "opentelemetry-instrumentation-remix@npm:0.8.0"
-  dependencies:
-    "@opentelemetry/instrumentation": "npm:^0.52.1"
-    "@opentelemetry/semantic-conventions": "npm:^1.25.1"
-  peerDependencies:
-    "@opentelemetry/api": ^1.3.0
-  checksum: 10c0/3c1a99043c9a27b12b105032edeca56efa5344d1b8433b0795fff58e6cd0ed8c3b5c970da0541326b96fd72694d7ed959079812d115667b25a4dd08e39c26b18
   languageName: node
   linkType: hard
 
@@ -7158,13 +7019,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"require-directory@npm:^2.1.1":
-  version: 2.1.1
-  resolution: "require-directory@npm:2.1.1"
-  checksum: 10c0/83aa76a7bc1531f68d92c75a2ca2f54f1b01463cb566cf3fbc787d0de8be30c9dbc211d1d46be3497dac5785fe296f2dd11d531945ac29730643357978966e99
-  languageName: node
-  linkType: hard
-
 "require-in-the-middle@npm:^7.1.1":
   version: 7.5.0
   resolution: "require-in-the-middle@npm:7.5.0"
@@ -7398,12 +7252,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"semver@npm:^7.1.1, semver@npm:^7.3.5, semver@npm:^7.3.7, semver@npm:^7.5.2, semver@npm:^7.5.3":
+"semver@npm:^7.1.1, semver@npm:^7.3.5, semver@npm:^7.3.7, semver@npm:^7.5.3":
   version: 7.6.3
   resolution: "semver@npm:7.6.3"
   bin:
     semver: bin/semver.js
   checksum: 10c0/88f33e148b210c153873cb08cfe1e281d518aaa9a666d4d148add6560db5cd3c582f3a08ccb91f38d5f379ead256da9931234ed122057f40bb5766e65e58adaf
+  languageName: node
+  linkType: hard
+
+"semver@npm:^7.5.2":
+  version: 7.7.0
+  resolution: "semver@npm:7.7.0"
+  bin:
+    semver: bin/semver.js
+  checksum: 10c0/bcd1c03209b4be7d8ca86c976a0410beba7d4ec1d49d846a4be154b958db1ff5eaee50760c1d4f4070b19dee3236b8672d3e09642c53ea23740398bba2538a2d
   languageName: node
   linkType: hard
 
@@ -7721,7 +7584,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"string-width-cjs@npm:string-width@^4.2.0, string-width@npm:^4.1.0, string-width@npm:^4.2.0, string-width@npm:^4.2.3":
+"string-width-cjs@npm:string-width@^4.2.0, string-width@npm:^4.1.0":
   version: 4.2.3
   resolution: "string-width@npm:4.2.3"
   dependencies:
@@ -8355,7 +8218,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"wrap-ansi-cjs@npm:wrap-ansi@^7.0.0, wrap-ansi@npm:^7.0.0":
+"wrap-ansi-cjs@npm:wrap-ansi@^7.0.0":
   version: 7.0.0
   resolution: "wrap-ansi@npm:7.0.0"
   dependencies:
@@ -8413,13 +8276,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"y18n@npm:^5.0.5":
-  version: 5.0.8
-  resolution: "y18n@npm:5.0.8"
-  checksum: 10c0/4df2842c36e468590c3691c894bc9cdbac41f520566e76e24f59401ba7d8b4811eb1e34524d57e54bc6d864bcb66baab7ffd9ca42bf1eda596618f9162b91249
-  languageName: node
-  linkType: hard
-
 "yallist@npm:^3.0.2":
   version: 3.1.1
   resolution: "yallist@npm:3.1.1"
@@ -8445,28 +8301,6 @@ __metadata:
   version: 1.10.2
   resolution: "yaml@npm:1.10.2"
   checksum: 10c0/5c28b9eb7adc46544f28d9a8d20c5b3cb1215a886609a2fd41f51628d8aaa5878ccd628b755dbcd29f6bb4921bd04ffbc6dcc370689bb96e594e2f9813d2605f
-  languageName: node
-  linkType: hard
-
-"yargs-parser@npm:^21.1.1":
-  version: 21.1.1
-  resolution: "yargs-parser@npm:21.1.1"
-  checksum: 10c0/f84b5e48169479d2f402239c59f084cfd1c3acc197a05c59b98bab067452e6b3ea46d4dd8ba2985ba7b3d32a343d77df0debd6b343e5dae3da2aab2cdf5886b2
-  languageName: node
-  linkType: hard
-
-"yargs@npm:^17.6.0":
-  version: 17.7.2
-  resolution: "yargs@npm:17.7.2"
-  dependencies:
-    cliui: "npm:^8.0.1"
-    escalade: "npm:^3.1.1"
-    get-caller-file: "npm:^2.0.5"
-    require-directory: "npm:^2.1.1"
-    string-width: "npm:^4.2.3"
-    y18n: "npm:^5.0.5"
-    yargs-parser: "npm:^21.1.1"
-  checksum: 10c0/ccd7e723e61ad5965fffbb791366db689572b80cca80e0f96aad968dfff4156cd7cd1ad18607afe1046d8241e6fb2d6c08bf7fa7bfb5eaec818735d8feac8f05
   languageName: node
   linkType: hard
 

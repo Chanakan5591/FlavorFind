@@ -13,7 +13,7 @@
  *
  * Copyright 2025 Chanakan Moongthin.
  */
-import * as Sentry from "@sentry/remix";
+import * as Sentry from "@sentry/react";
 import { startTransition, StrictMode, useEffect } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
@@ -25,12 +25,12 @@ Sentry.init({
   tracesSampleRate: 1,
 
   integrations: [
-    Sentry.browserTracingIntegration({
-      useEffect,
-      useLocation,
-      useMatches,
-    }),
+    Sentry.browserTracingIntegration(),
+    Sentry.replayIntegration()
   ],
+
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
 });
 
 function PosthogInit() {

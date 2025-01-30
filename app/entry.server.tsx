@@ -13,17 +13,27 @@
  *
  * Copyright 2025 Chanakan Moongthin.
  */
-import * as Sentry from "@sentry/remix";
 import { PassThrough } from "node:stream";
 
-import type { AppLoadContext, EntryContext } from "react-router";
+import type { AppLoadContext, EntryContext, HandleErrorFunction } from "react-router";
 import { createReadableStreamFromReadable } from "@react-router/node";
 import { ServerRouter } from "react-router";
 import { isbot } from "isbot";
 import type { RenderToPipeableStreamOptions } from "react-dom/server";
 import { renderToPipeableStream } from "react-dom/server";
+import * as Sentry from "@sentry/node";
 
 const ABORT_DELAY = 5_000;
+
+export const handleError: HandleErrorFunction = (error, { request }) => {
+  // React Router may abort some interrupted requests, report those
+  if (!request.signal.aborted) {
+    Sentry.captureException(error);
+
+    // make sure to still log the error so you can see it
+    console.error(error);
+  }
+};
 
 export default function handleRequest(
   request: Request,
