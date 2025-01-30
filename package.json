@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "cross-env NODE_ENV=production NODE_OPTIONS='--import=./instrument.server.mjs' react-router build && node vercel/prepare.js",
+    "build": "cross-env NODE_ENV=production NODE_OPTIONS='--import=./instrumentation.server.mjs' react-router build && node vercel/prepare.js",
     "postinstall": "prisma generate",
     "dev": "react-router dev",
     "start": "cross-env NODE_ENV=production react-router-serve ./build/server/index.js",
