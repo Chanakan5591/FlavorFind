@@ -31,9 +31,10 @@ import Navbar from "./components/navbar";
 
 import "./global.css";
 
-import { Box } from "@chakra-ui/react";
+import { Box, ChakraProvider } from "@chakra-ui/react";
 import { Toaster } from "./components/ui/toaster";
 import PostHogPageView from "./util/pageview";
+import { system } from "theme";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://typefaces.chanakancloud.net" },
@@ -63,33 +64,31 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <Provider>
-      <ColorModeProvider>
-        <Toaster />
-        <Box
-          css={{
-            position: "relative", // Needed for positioning the pseudo-element
-            width: "100%",
+    <ChakraProvider value={system}>
+      <Toaster />
+      <Box
+        css={{
+          position: "relative", // Needed for positioning the pseudo-element
+          width: "100%",
+          height: "100%",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "full",
+            minH: "100svh",
             height: "100%",
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "full",
-              minH: "100svh",
-              height: "100%",
-              zIndex: -1, // Place it behind the content
-              background: "#ebfff3",
-            },
-          }}
-        >
-          <Navbar />
-          <Outlet />
-          <PostHogPageView />
-        </Box>
-      </ColorModeProvider>
-    </Provider>
+            zIndex: -1, // Place it behind the content
+            background: "#ebfff3",
+          },
+        }}
+      >
+        <Navbar />
+        <Outlet />
+        <PostHogPageView />
+      </Box>
+    </ChakraProvider>
   );
 }
 

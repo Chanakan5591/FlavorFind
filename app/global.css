@@ -1,4 +1,3 @@
-
 @font-face {
     font-family: 'LINE Seed TH';
     src: url('https://typefaces.chanakancloud.net/LINESeedSansTH_W_Rg.woff2') format('woff2');
@@ -13,13 +12,17 @@
     font-display: swap;
 }
 
+:root {
+    color-scheme: only light;
+}
+
 html {
     background-color: #ebfff3;
     color: #333;
     font-family: 'LINE Seed TH', sans-serif;
 }
-o
-.avg-star {
+
+o .avg-star {
     color: #f1de9a;
     /* Bright yellow for user rating */
 }
