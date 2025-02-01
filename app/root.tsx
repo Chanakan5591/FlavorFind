@@ -35,6 +35,7 @@ import { Box, ChakraProvider } from "@chakra-ui/react";
 import { Toaster } from "./components/ui/toaster";
 import PostHogPageView from "./util/pageview";
 import { system } from "theme";
+import { Posthog } from "./posthog";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://typefaces.chanakancloud.net" },
@@ -57,6 +58,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
         <ScrollRestoration />
         <Scripts />
+        <Posthog />
       </body>
     </html>
   );
@@ -68,20 +70,8 @@ export default function App() {
       <Toaster />
       <Box
         css={{
-          position: "relative", // Needed for positioning the pseudo-element
           width: "100%",
           height: "100%",
-          "&::before": {
-            content: '""',
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "full",
-            minH: "100svh",
-            height: "100%",
-            zIndex: -1, // Place it behind the content
-            background: "#ebfff3",
-          },
         }}
       >
         <Navbar />

@@ -14,13 +14,28 @@
  * Copyright 2025 Chanakan Moongthin.
  */
 import type { Route } from "./+types/plan";
-import { useParams, type LoaderFunctionArgs } from "react-router";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  type LoaderFunctionArgs,
+} from "react-router";
 import pako from "pako";
 import prisma from "~/db.server";
 import { findMatchingStores } from "~/util/datentime.server";
 import type { stores, StoresMenu } from "@prisma/ffdb";
-import { Box, Flex, Grid, HStack, Text, VStack } from "@chakra-ui/react";
+import {
+  Box,
+  Flex,
+  Grid,
+  HStack,
+  Progress,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
 import Confetti from "react-confetti-boom";
+import { Button } from "~/components/ui/button";
+import { createId } from "@paralleldrive/cuid2";
 
 const mappings = {
   mD: "mealsDate",
@@ -336,7 +351,7 @@ const getMenuItemId = (menu: StoresMenu) =>
 
 /**
  * Picks a meal and drink deterministically from a store's menu, avoiding duplicates.
- * Now returns both drink item and its store
+ * Now returns both drink item and its store.
  */
 function pickMealAndDrink(
   withBeverage: boolean,
@@ -391,6 +406,30 @@ function pickMealAndDrink(
     pickedFood,
     pickedDrink: drinkEntry,
   };
+}
+
+/**
+ * Fallback function: for a given food store (and its menus), simply choose the cheapest food option
+ * and (if applicable) the cheapest drink option.
+ */
+function pickCheapestMealAndDrink(
+  withBeverage: boolean,
+  foodStore: stores,
+  filteredMenu: StoresMenu[],
+  drinkOptions: StoresMenu[],
+) {
+  // Choose the cheapest food option
+  const pickedFood = filteredMenu.reduce((prev, curr) =>
+    curr.price < prev.price ? curr : prev,
+  );
+
+  let pickedDrink: StoresMenu | undefined;
+  if (withBeverage && drinkOptions.length > 0) {
+    pickedDrink = drinkOptions.reduce((prev, curr) =>
+      curr.price < prev.price ? curr : prev,
+    );
+  }
+  return { pickedFood, pickedDrink };
 }
 
 export const loader = async ({ params }: LoaderFunctionArgs) => {
@@ -464,17 +503,19 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   const usedMeals: Set<string> = new Set();
   const usedDrinks: Set<string> = new Set();
 
+  // Build the deterministic menu plan as before
   const selectedMenu = selectedStoresForEachMeal.map((mealStore) => {
     const { meal, foodStore, drinkStore, canteenName } = mealStore;
 
-    const drinkOptions = drinkStore.menu.filter(
-      (menu) =>
-        menu.category === "DRINK" &&
-        menu.price >= priceRange[0] &&
-        menu.price <= priceRange[1] &&
-        menu.sub_category !== "toppings",
-    );
-
+    const drinkOptions = drinkStore
+      ? drinkStore.menu.filter(
+          (menu) =>
+            menu.category === "DRINK" &&
+            menu.price >= priceRange[0] &&
+            menu.price <= priceRange[1] &&
+            menu.sub_category !== "toppings",
+        )
+      : [];
     const filteredMenu = foodStore.menu.filter(
       (menu) =>
         menu.price >= priceRange[0] &&
@@ -510,26 +551,117 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     return {
       meal,
       canteenName,
-      store: foodStore,
+      store: (({ menu, ...rest }) => rest)(foodStore),
       pickedMeal: pickedFood,
       drinkMenu: pickedDrink,
       drinkStore: drinkStore ? (({ menu, ...rest }) => rest)(drinkStore) : null,
     };
   });
 
-  // remove menu object from store object
-  selectedMenu.forEach((meal) => {
-    meal.store = (({ menu, ...rest }) => rest)(meal.store) as stores;
+  // Calculate total cost for the deterministic plan (food + drink prices)
+  const deterministicTotal = selectedMenu.reduce((sum, meal) => {
+    return (
+      sum + meal.pickedMeal.price + (meal.drinkMenu ? meal.drinkMenu.price : 0)
+    );
+  }, 0);
+
+  // If the deterministic plan is within budget, return it…
+  if (deterministicTotal <= totalPlannedBudgets) {
+    return {
+      selectedMenu,
+      budgetUsed: deterministicTotal,
+      totalPlannedBudgets,
+    };
+  }
+
+  // Otherwise, build a fallback plan that uses the cheapest options available.
+  const fallbackMenu = selectedStoresForEachMeal.map((mealStore) => {
+    const { meal, foodStore, drinkStore, canteenName } = mealStore;
+    const drinkOptions = drinkStore
+      ? drinkStore.menu.filter(
+          (menu) =>
+            menu.category === "DRINK" &&
+            menu.price >= priceRange[0] &&
+            menu.price <= priceRange[1] &&
+            menu.sub_category !== "toppings",
+        )
+      : [];
+    const filteredMenu = foodStore.menu.filter(
+      (menu) =>
+        menu.price >= priceRange[0] &&
+        menu.price <= priceRange[1] &&
+        menu.category !== "DRINK" &&
+        ((menu.sub_category === "chicken_rice" && filters.chicken_rice) ||
+          (menu.sub_category === "japanese" && filters.japanese) ||
+          (menu.sub_category === "noodles" && filters.noodles) ||
+          (menu.sub_category === "rice_curry" && filters.rice_curry) ||
+          (menu.sub_category === "somtum_northeastern" &&
+            filters.somtum_northeastern) ||
+          (menu.sub_category === "steak" && filters.steak) ||
+          (menu.sub_category === "others" && filters.others) ||
+          (!filters.chicken_rice &&
+            !filters.japanese &&
+            !filters.noodles &&
+            !filters.rice_curry &&
+            !filters.somtum_northeastern &&
+            !filters.steak &&
+            !filters.others)),
+    );
+    const { pickedFood, pickedDrink } = pickCheapestMealAndDrink(
+      withBeverage,
+      foodStore,
+      filteredMenu,
+      drinkOptions,
+    );
+
+    return {
+      meal,
+      canteenName,
+      store: (({ menu, ...rest }) => rest)(foodStore) as stores,
+      pickedMeal: pickedFood,
+      drinkMenu: pickedDrink,
+      drinkStore: drinkStore ? (({ menu, ...rest }) => rest)(drinkStore) : null,
+    };
   });
 
+  const fallbackTotal = fallbackMenu.reduce((sum, meal) => {
+    return (
+      sum + meal.pickedMeal.price + (meal.drinkMenu ? meal.drinkMenu.price : 0)
+    );
+  }, 0);
+
   return {
-    selectedMenu,
+    // If the deterministic plan goes over budget, return the fallback plan.
+    selectedMenu: fallbackMenu,
+    budgetUsed: fallbackTotal,
     totalPlannedBudgets,
   };
 };
 
+function calculatePercentage(n: number, min: number, k: number) {
+  if (n < min) {
+    throw new Error("Value of n is out of range");
+  }
+
+  // if n is greater than k, return 100
+  if (n > k) {
+    return 100;
+  }
+
+  return ((n - min) / (k - min)) * 100;
+}
+
 export default function NewPlan({ loaderData }: Route.ComponentProps) {
   const selectedMenu = loaderData.selectedMenu;
+
+  const budgetPercentage = calculatePercentage(
+    loaderData.budgetUsed!,
+    0,
+    loaderData.totalPlannedBudgets!,
+  );
+
+  const { encodedParams } = useParams();
+  const navigate = useNavigate();
 
   return (
     <>
@@ -537,6 +669,28 @@ export default function NewPlan({ loaderData }: Route.ComponentProps) {
         <Text fontSize="2xl" fontWeight="semibold">
           Meal Plan
         </Text>
+        <Text>
+          Total budget used: ฿{loaderData.budgetUsed}/฿
+          {loaderData.totalPlannedBudgets}
+        </Text>
+        <HStack width="24rem">
+          <Progress.Root
+            value={budgetPercentage}
+            width="full"
+            size="xl"
+            colorPalette={
+              budgetPercentage >= 80
+                ? "red"
+                : budgetPercentage >= 60
+                  ? "yellow"
+                  : "green"
+            }
+          >
+            <Progress.Track>
+              <Progress.Range />
+            </Progress.Track>
+          </Progress.Root>
+        </HStack>
         <Grid
           gap={4}
           templateColumns={{
@@ -600,30 +754,48 @@ export default function NewPlan({ loaderData }: Route.ComponentProps) {
                   </Text>
                 </VStack>
               </Box>
-              <Flex
-                bg="brand.300"
-                rounded="lg"
-                minH={14}
-                pt={4}
-                px={2}
-                mt={-4}
-                border="2px solid"
-                alignItems="center"
-              >
-                <HStack
-                  textAlign="center"
-                  h="full"
-                  w="full"
-                  justifyContent="space-between"
+              {meal.drinkMenu && meal.drinkStore && (
+                <Flex
+                  bg="brand.300"
+                  rounded="lg"
+                  minH={14}
+                  pt={4}
+                  px={2}
+                  mt={-4}
+                  border="2px solid"
+                  alignItems="center"
                 >
-                  <Text color="white">{meal.drinkMenu?.name}</Text>
-                  <Text color="white">@ {meal.drinkStore?.name}</Text>
-                  <Text color="white">฿{meal.drinkMenu?.price}</Text>
-                </HStack>
-              </Flex>
+                  <HStack
+                    textAlign="center"
+                    h="full"
+                    w="full"
+                    justifyContent="space-between"
+                  >
+                    <Text color="white">{meal.drinkMenu.name}</Text>
+                    <Text color="white">@ {meal.drinkStore.name}</Text>
+                    <Text color="white">฿{meal.drinkMenu.price}</Text>
+                  </HStack>
+                </Flex>
+              )}
             </Box>
           ))}
         </Grid>
+        <HStack>
+          <Button
+            width="10rem"
+            colorPalette="accent"
+            onClick={() => {
+              const id = createId();
+              navigate(`/plan/${encodedParams}/${id}`);
+            }}
+          >
+            Get me a new meal!
+          </Button>
+          <Button width="10rem">Save this plan</Button>
+          <Link to="/">
+            <Button width="10rem">Go back</Button>
+          </Link>
+        </HStack>
       </VStack>
       <Confetti mode="boom" particleCount={60} spreadDeg={120} y={0.3} />
     </>

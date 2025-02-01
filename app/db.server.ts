@@ -14,7 +14,6 @@
  * Copyright 2025 Chanakan Moongthin.
  */
 import { PrismaClient } from "@prisma/ffdb";
-import { env } from "./env";
 
 const prisma = new PrismaClient();
 export default prisma;

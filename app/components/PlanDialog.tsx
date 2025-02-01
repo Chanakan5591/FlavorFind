@@ -14,7 +14,7 @@
  * Copyright 2025 Chanakan Moongthin.
  */
 import { Button } from "./ui/button";
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   DialogActionTrigger,
   DialogBody,
@@ -41,7 +41,15 @@ import {
   filtersAtom,
   totalPlannedBudgetsAtom,
 } from "~/stores";
-import { Box, Collapsible, Flex, Grid, Input, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Collapsible,
+  Flex,
+  Grid,
+  Input,
+  Text,
+  type NumberInputValueChangeDetails,
+} from "@chakra-ui/react";
 import { useFetcher, useNavigate } from "react-router";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { useAtomValue } from "jotai";
@@ -64,7 +72,6 @@ export function PlanDialog() {
   const [mealsPlanningAmount, setMealsPlanningAmount] = useAtom(
     mealsPlanningAmountAtom,
   );
-
   const [totalPlannedBudgets, setTotalPlannedBudgets] = useAtom(
     totalPlannedBudgetsAtom,
   );
@@ -89,11 +96,6 @@ export function PlanDialog() {
       withBeverage: true,
     },
   });
-
-  const validMealsPlanningAmount =
-    typeof mealsPlanningAmount === "number" && !isNaN(mealsPlanningAmount)
-      ? Math.max(0, Math.min(mealsPlanningAmount, 5))
-      : 0;
 
   const onPlanSubmit: SubmitHandler<Inputs> = async (data) => {
     console.log(data);
@@ -183,43 +185,21 @@ export function PlanDialog() {
     navigate(`/plan/${encodedParam}/${createId()}`);
   };
 
-  // Use refs to store the last valid values
-  const lastValidMealsPlanningAmount = useRef(mealsPlanningAmount);
-  const lastValidTotalPlannedBudgets = useRef(totalPlannedBudgets);
-
-  // Function to handle input change with debouncing
+  // // Function to handle input change
   const handleInputChange = (
     setter: (value: number) => void,
-    lastValidValueRef: React.MutableRefObject<number>,
     min: number,
     max: number,
   ) => {
-    let timeoutId: NodeJS.Timeout;
-    return (e: { value: string }) => {
-      clearTimeout(timeoutId);
-      const inputValue = e.value;
-
-      timeoutId = setTimeout(() => {
-        const parsedValue = parseInt(inputValue);
-        if (!isNaN(parsedValue) && parsedValue >= min && parsedValue <= max) {
-          setter(parsedValue);
-          lastValidValueRef.current = parsedValue;
-        } else {
-          setter(lastValidValueRef.current);
-        }
-      }, 500); // 500ms debounce time
+    return (detail: NumberInputValueChangeDetails) => {
+      const parsed = detail.valueAsNumber;
+      if (!isNaN(parsed) && parsed >= min && parsed <= max) {
+        setter(parsed);
+      } else if (detail.value === "" || detail.value === "-") {
+        setter(min);
+      }
     };
   };
-
-  // Update refs when the atom values change
-  useEffect(() => {
-    lastValidMealsPlanningAmount.current = mealsPlanningAmount;
-  }, [mealsPlanningAmount]);
-
-  useEffect(() => {
-    lastValidTotalPlannedBudgets.current = totalPlannedBudgets;
-  }, [totalPlannedBudgets]);
-
   const userClickedPlan = () => {
     posthog.capture("user_clicked_plan", {
       client: cookies["nomnom"],
@@ -246,21 +226,19 @@ export function PlanDialog() {
                 required
               >
                 <NumberInputRoot
+                  value={mealsPlanningAmount.toString()}
                   min={1}
                   max={5}
-                  value={mealsPlanningAmount.toString()}
                   onValueChange={handleInputChange(
                     setMealsPlanningAmount,
-                    lastValidMealsPlanningAmount,
                     1,
                     5,
                   )}
                 >
-                  <NumberInputField
-                    value={lastValidMealsPlanningAmount.current}
-                  />
+                  <NumberInputField />
                 </NumberInputRoot>
               </Field>
+
               <Field
                 label="Total Budgets (฿)"
                 errorText="The entry is invalid"
@@ -268,24 +246,21 @@ export function PlanDialog() {
                 required
               >
                 <NumberInputRoot
+                  value={totalPlannedBudgets.toString()}
                   min={5}
                   max={1000}
-                  value={totalPlannedBudgets.toString()}
                   onValueChange={handleInputChange(
                     setTotalPlannedBudgets,
-                    lastValidTotalPlannedBudgets,
-                    5,
+                    0,
                     1000,
                   )}
                 >
-                  <NumberInputField
-                    value={lastValidTotalPlannedBudgets.current}
-                  />
+                  <NumberInputField />
                 </NumberInputRoot>
               </Field>
             </Grid>
 
-            <Collapsible.Root>
+            <Collapsible.Root open={mealsPlanningAmount > 0}>
               <Collapsible.Trigger
                 paddingY="3"
                 cursor="pointer"
@@ -296,32 +271,28 @@ export function PlanDialog() {
 
               <Collapsible.Content>
                 <Grid templateColumns="repeat(2, 1fr)" gap="1rem">
-                  {[...Array(Math.min(validMealsPlanningAmount, 5))].map(
-                    (_, index) => (
-                      <>
-                        <Field
-                          key={`mealdate_${index}`}
-                          label={`Meal ${index + 1} Date`}
-                          errorText="The entry is invalid"
-                        >
-                          <Input
-                            {...register(`meals.${index}.date` as const)}
-                            type="date"
-                          />
-                        </Field>
-                        <Field
-                          key={`mealtime_${index}`}
-                          label={`Meal ${index + 1} Time`}
-                          errorText="The entry is invalid"
-                        >
-                          <Input
-                            {...register(`meals.${index}.time` as const)}
-                            type="time"
-                          />
-                        </Field>
-                      </>
-                    ),
-                  )}
+                  {[...Array(mealsPlanningAmount)].map((_, index) => (
+                    <React.Fragment key={`meal_${index}`}>
+                      <Field
+                        label={`Meal ${index + 1} Date`}
+                        errorText="The entry is invalid"
+                      >
+                        <Input
+                          {...register(`meals.${index}.date` as const)}
+                          type="date"
+                        />
+                      </Field>
+                      <Field
+                        label={`Meal ${index + 1} Time`}
+                        errorText="The entry is invalid"
+                      >
+                        <Input
+                          {...register(`meals.${index}.time` as const)}
+                          type="time"
+                        />
+                      </Field>
+                    </React.Fragment>
+                  ))}
                 </Grid>
               </Collapsible.Content>
               <Text as="span" ml={2} color="gray.500">
@@ -337,7 +308,12 @@ export function PlanDialog() {
               alignItems: "center",
             }}
           >
-            <Switch colorPalette="brand.solid" {...register("withBeverage")}>
+            <Switch
+              colorPalette="brand.solid"
+              checked={withBeverage}
+              onCheckedChange={(e) => setWithBeverage(e.checked)}
+              {...register("withBeverage")}
+            >
               With Beverage
             </Switch>
             <Flex gapX={2}>

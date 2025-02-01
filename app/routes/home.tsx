@@ -25,11 +25,11 @@ import {
   Slider,
   Grid,
   Flex,
+  type SliderValueChangeDetails,
 } from "@chakra-ui/react";
 import type { Route } from "./+types/home";
 import prisma from "~/db.server";
 import CafeteriaList from "~/components/CafeteriaList";
-import type { Prisma } from "@prisma/client";
 import type { CanteenWithStores } from "~/types";
 import {
   SelectContent,
@@ -131,6 +131,7 @@ export async function action({ request }: Route.ActionArgs) {
   return { ok: true, new_store: ratings.store };
 }
 
+// (Not used here, but keeping the memoized version available if needed)
 const MemoizedSelectRoot = React.memo(SelectRoot);
 
 // Jotai atom for loading state
@@ -249,11 +250,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
     const minRange = 5;
     const maxRange = 150;
-
-    // Calculate the range difference
     const rangeDifference = maxRange - minRange;
 
-    // Map the percentage to the range
     const mappedValue = Math.round(
       minRange + (percentage / 100) * rangeDifference,
     );
@@ -263,37 +261,52 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   const [priceSliderValue, setPriceSliderValue] = useState([0, 100]);
 
-  const handlePriceRangeChange = useCallback((value: number[]) => {
-    setIsLoading(true);
-
-    const minPrice = mapPercentageToRange(value[0]);
-    const maxPrice = mapPercentageToRange(value[1]);
-    const priceRange = [minPrice, maxPrice];
-
-    setPriceSliderValue(value);
-    setPriceRange(priceRange);
-  }, []);
-
-  const handleCafeteriaChange = useCallback((value: string[]) => {
-    setSelectedCanteens(value);
-  }, []);
+  // --- Slider callbacks (note the callback now receives the updated value array directly) ---
+  const handlePriceRangeChange = useCallback(
+    (details: SliderValueChangeDetails) => {
+      const minPrice = mapPercentageToRange(details.value[0]);
+      const maxPrice = mapPercentageToRange(details.value[1]);
+      setPriceSliderValue(details.value);
+      setPriceRange([minPrice, maxPrice]);
+      // Immediately start the “loading” state for new filter changes.
+      setIsLoading(true);
+    },
+    [setIsLoading, setPriceRange],
+  );
 
   const handleSliderMouseUp = useCallback(() => {
     setIsLoading(false);
-  }, []);
+  }, [setIsLoading]);
 
+  // Note: useSlider’s onValueChange now provides the value directly.
   const priceSlider = useSlider({
     thumbAlignment: "center",
     value: priceSliderValue,
-    onValueChange: (slider) => handlePriceRangeChange(slider.value),
-    onValueChangeEnd: () => handleSliderMouseUp(),
+    onValueChange: handlePriceRangeChange,
+    onValueChangeEnd: handleSliderMouseUp,
   });
 
   const [filters, setFilters] = useAtom(filtersAtom);
 
   const id = useId();
 
-  useEffect(() => {}, [priceSlider.value]);
+  // --- For all filter changes (select, slider, checkboxes) we use a debounce effect
+  // to “cancel” previous processing and turn off isLoading after a short delay. ---
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [filters, selectedCanteens, priceRange, setIsLoading]);
+
+  // --- Handlers for Select and Checkboxes ---
+  const handleCafeteriaChange = useCallback(
+    (value: string[]) => {
+      setIsLoading(true);
+      setSelectedCanteens(value);
+    },
+    [setIsLoading, setSelectedCanteens],
+  );
 
   return (
     <Box padding={8} colorPalette="brand">
@@ -306,7 +319,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         >
           <Box width="full" height={20}>
             <SelectRoot
-              readOnly={isLoading}
               collection={canteens_collection}
               value={selectedCanteens}
               onValueChange={({ value }) => handleCafeteriaChange(value)}
@@ -344,7 +356,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 <Slider.Thumb index={0}>
                   <Slider.HiddenInput />
                 </Slider.Thumb>
-
                 <Slider.Thumb index={1}>
                   <Slider.HiddenInput />
                 </Slider.Thumb>
@@ -353,11 +364,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </Box>
         </Stack>
         <Flex
-          gap={4} // Consistent spacing between checkboxes
-          justifyContent="space-between" // Left-aligned on md, centered on base for grid
-          alignItems="center" // Vertically align checkboxes in the row (md)
+          gap={4}
+          justifyContent="space-between"
+          alignItems="center"
           direction={{ md: "row", base: "column" }}
-          w="full" // Take up full width available
+          w="full"
           mb={4}
         >
           <Flex
@@ -368,122 +379,133 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           >
             <Checkbox
               checked={filters.noAircon}
-              onCheckedChange={(e) =>
-                setFilters((filters) => ({
-                  ...filters,
+              onCheckedChange={(e) => {
+                setIsLoading(true);
+                setFilters((prev) => ({
+                  ...prev,
                   noAircon: e.checked as boolean,
-                }))
-              }
+                }));
+              }}
             >
               ไม่มีแอร์
             </Checkbox>
             <Checkbox
               checked={filters.withAircon}
-              onCheckedChange={(e) =>
-                setFilters((filters) => ({
-                  ...filters,
+              onCheckedChange={(e) => {
+                setIsLoading(true);
+                setFilters((prev) => ({
+                  ...prev,
                   withAircon: e.checked as boolean,
-                }))
-              }
+                }));
+              }}
             >
               มีแอร์
             </Checkbox>
             <Checkbox
               checked={filters.noodles}
-              onCheckedChange={(e) =>
-                setFilters((filters) => ({
-                  ...filters,
+              onCheckedChange={(e) => {
+                setIsLoading(true);
+                setFilters((prev) => ({
+                  ...prev,
                   noodles: e.checked as boolean,
-                }))
-              }
+                }));
+              }}
             >
               ก๋วยเตี๋ยว/เกาเหลา
             </Checkbox>
             <Checkbox
               checked={filters.soup_curry}
-              onCheckedChange={(e) =>
-                setFilters((filters) => ({
-                  ...filters,
+              onCheckedChange={(e) => {
+                setIsLoading(true);
+                setFilters((prev) => ({
+                  ...prev,
                   soup_curry: e.checked as boolean,
-                }))
-              }
+                }));
+              }}
             >
               ต้ม แกง
             </Checkbox>
             <Checkbox
               checked={filters.chicken_rice}
-              onCheckedChange={(e) =>
-                setFilters((filters) => ({
-                  ...filters,
+              onCheckedChange={(e) => {
+                setIsLoading(true);
+                setFilters((prev) => ({
+                  ...prev,
                   chicken_rice: e.checked as boolean,
-                }))
-              }
+                }));
+              }}
             >
               ข้าวมันไก่
             </Checkbox>
             <Checkbox
               checked={filters.rice_curry}
-              onCheckedChange={(e) =>
-                setFilters((filters) => ({
-                  ...filters,
+              onCheckedChange={(e) => {
+                setIsLoading(true);
+                setFilters((prev) => ({
+                  ...prev,
                   rice_curry: e.checked as boolean,
-                }))
-              }
+                }));
+              }}
             >
               ข้าวราดแกง/ข้าวต่างๆ
             </Checkbox>
             <Checkbox
               checked={filters.somtum_northeastern}
-              onCheckedChange={(e) =>
-                setFilters((filters) => ({
-                  ...filters,
+              onCheckedChange={(e) => {
+                setIsLoading(true);
+                setFilters((prev) => ({
+                  ...prev,
                   somtum_northeastern: e.checked as boolean,
-                }))
-              }
+                }));
+              }}
             >
               ส้มตำ อาหารอีสาน
             </Checkbox>
             <Checkbox
               checked={filters.steak}
-              onCheckedChange={(e) =>
-                setFilters((filters) => ({
-                  ...filters,
+              onCheckedChange={(e) => {
+                setIsLoading(true);
+                setFilters((prev) => ({
+                  ...prev,
                   steak: e.checked as boolean,
-                }))
-              }
+                }));
+              }}
             >
               สเต็ก
             </Checkbox>
             <Checkbox
               checked={filters.japanese}
-              onCheckedChange={(e) =>
-                setFilters((filters) => ({
-                  ...filters,
+              onCheckedChange={(e) => {
+                setIsLoading(true);
+                setFilters((prev) => ({
+                  ...prev,
                   japanese: e.checked as boolean,
-                }))
-              }
+                }));
+              }}
             >
               อาหารญี่ปุ่น
             </Checkbox>
             <Checkbox
               checked={filters.others}
-              onCheckedChange={(e) =>
-                setFilters((filters) => ({
-                  ...filters,
+              onCheckedChange={(e) => {
+                setIsLoading(true);
+                setFilters((prev) => ({
+                  ...prev,
                   others: e.checked as boolean,
-                }))
-              }
+                }));
+              }}
             >
               อื่นๆ
             </Checkbox>
             <Checkbox
               checked={filters.beverage}
-              onCheckedChange={(e) =>
-                setFilters((filters) => ({
-                  ...filters,
+              onCheckedChange={(e) => {
+                setIsLoading(true);
+                setFilters((prev) => ({
+                  ...prev,
                   beverage: e.checked as boolean,
-                }))
-              }
+                }));
+              }}
             >
               เครื่องดื่ม
             </Checkbox>
