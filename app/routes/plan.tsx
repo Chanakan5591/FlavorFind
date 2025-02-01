@@ -224,6 +224,7 @@ async function filterAndShuffleCanteens(
   selectedCanteens: string[],
   filters: Record<string, boolean>,
   seed: number,
+  priceRange: number[],
 ) {
   const airConditioningFilter =
     filters.withAircon && filters.noAircon
@@ -363,7 +364,11 @@ function pickMealAndDrink(
   planId: string,
 ) {
   let drinkEntry: StoresMenu | undefined;
-  if (withBeverage) {
+  if (withBeverage && drinkOptions.length > 0) {
+    // If all drink options have been used, allow reuse by clearing the used set.
+    if (usedDrinks.size >= drinkOptions.length) {
+      usedDrinks.clear();
+    }
     let drinkSeedOffset = 0;
     do {
       const drinkSpecificSeed = stringToHash(
@@ -382,6 +387,11 @@ function pickMealAndDrink(
     }
   }
 
+  // If all food options have been used, allow reuse by clearing the used set.
+  if (filteredMenu.length > 0 && usedMeals.size >= filteredMenu.length) {
+    usedMeals.clear();
+  }
+
   let pickedFood: StoresMenu | undefined;
   let mealSeedOffset = 0;
   do {
@@ -396,10 +406,10 @@ function pickMealAndDrink(
     mealSeedOffset < filteredMenu.length + 1
   );
 
+  // Fallback if nothing was picked
   if (!pickedFood) {
     pickedFood = filteredMenu[0];
   }
-
   usedMeals.add(getMenuItemId(pickedFood));
 
   return {
@@ -464,13 +474,6 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     others: data.others === "1",
   };
 
-  const filteredCanteens = await filterAndShuffleCanteens(
-    selectedCanteens,
-    filters,
-    seed,
-  );
-  const selectedCanteenIds = filteredCanteens.map((canteen) => canteen.id);
-
   const criteria = {
     priceRange,
     withBeverage,
@@ -479,6 +482,15 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     filters,
     meals,
   };
+
+  const filteredCanteens = await filterAndShuffleCanteens(
+    selectedCanteens,
+    filters,
+    seed,
+    priceRange,
+  );
+
+  const selectedCanteenIds = filteredCanteens.map((canteen) => canteen.id);
 
   const allStoresInCriteria = await findMatchingStores(
     criteria,

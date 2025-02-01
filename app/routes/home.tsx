@@ -265,8 +265,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const handlePriceRangeChange = useCallback(
     (details: SliderValueChangeDetails) => {
       const minPrice = mapPercentageToRange(details.value[0]);
-      const maxPrice = mapPercentageToRange(details.value[1]);
-      setPriceSliderValue(details.value);
+      let maxPrice = Math.max(mapPercentageToRange(details.value[1]), 50);
+      const newPriceRange = [details.value[0], Math.max(details.value[1], 31)];
+      setPriceSliderValue(newPriceRange);
       setPriceRange([minPrice, maxPrice]);
       // Immediately start the “loading” state for new filter changes.
       setIsLoading(true);
