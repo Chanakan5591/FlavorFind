@@ -25,16 +25,6 @@ import * as Sentry from "@sentry/node";
 
 const ABORT_DELAY = 5_000;
 
-export const handleError: HandleErrorFunction = (error, { request }) => {
-  // React Router may abort some interrupted requests, report those
-  if (!request.signal.aborted) {
-    Sentry.captureException(error);
-
-    // make sure to still log the error so you can see it
-    console.error(error);
-  }
-};
-
 export default function handleRequest(
   request: Request,
   responseStatusCode: number,
@@ -84,6 +74,10 @@ export default function handleRequest(
           // Log streaming rendering errors from inside the shell.  Don't log
           // errors encountered during initial shell rendering since they'll
           // reject and get logged in handleDocumentRequest.
+          if (!request.signal.aborted) {
+            Sentry.captureException(error);
+          }
+
           if (shellRendered) {
             console.error(error);
           }

@@ -53,7 +53,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { PlanDialog } from "~/components/PlanDialog";
 import { selectedCanteensAtom, priceRangeAtom, filtersAtom } from "~/stores";
 
-export function meta({}: Route.MetaArgs) {
+export function meta({ }: Route.MetaArgs) {
   return [
     { title: "FlavorFind" },
     {
