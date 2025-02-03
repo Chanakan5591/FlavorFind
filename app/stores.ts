@@ -32,7 +32,7 @@ const filtersAtom = atom({
   beverage: false,
   others: false,
 });
-const totalPlannedBudgetsAtom = atom<number>(100);
+const totalPlannedBudgetsAtom = atom<number>(300);
 
 export {
   totalPlannedBudgetsAtom,
