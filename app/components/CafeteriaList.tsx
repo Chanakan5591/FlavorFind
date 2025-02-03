@@ -62,26 +62,43 @@ function isOpenNow(
   openingHours: { dayOfWeek: string; start: string; end: string }[],
 ) {
   const now = new Date(); // Get the current date and time
-  const currentDayOfWeek = now
-    .toLocaleString("en-US", { weekday: "long" })
-    .toUpperCase(); // Get the current day of the week (e.g., "MONDAY")
-  const currentTime = now.getHours() * 100 + now.getMinutes(); // Get the current time in 24-hour format (e.g., 1430 for 2:30 PM)
 
-  // Find the opening hours for today
+  // Get the current day of the week in UTC+7
+  const currentDayOfWeekUTCPlus7 = now
+    .toLocaleString("en-US", {
+      weekday: "long",
+      timeZone: "Asia/Bangkok", // Use a timezone identifier for UTC+7 (e.g., Bangkok, Jakarta)
+    })
+    .toUpperCase();
+
+  // Get the current time in UTC+7 and convert it to 24-hour format integer
+  const currentHourUTCPlus7 = now.toLocaleString("en-US", {
+    hour: "numeric",
+    hour12: false,
+    timeZone: "Asia/Bangkok",
+  });
+  const currentMinuteUTCPlus7 = now.toLocaleString("en-US", {
+    minute: "numeric",
+    timeZone: "Asia/Bangkok",
+  });
+  const currentTimeUTCPlus7 =
+    parseInt(currentHourUTCPlus7) * 100 + parseInt(currentMinuteUTCPlus7);
+
+  // Find the opening hours for today in UTC+7
   const todayHours = openingHours.find(
-    (hours) => hours.dayOfWeek === currentDayOfWeek,
+    (hours) => hours.dayOfWeek === currentDayOfWeekUTCPlus7,
   );
 
   if (!todayHours) {
     return false; // Closed if there are no hours specified for today
   }
 
-  // Convert opening and closing times to 24-hour format integers
+  // Convert opening and closing times (which are already in UTC+7) to 24-hour format integers
   const startTime = parseInt(todayHours.start.replace(":", ""));
   const endTime = parseInt(todayHours.end.replace(":", ""));
 
-  // Check if the current time is within the opening hours
-  return currentTime >= startTime && currentTime <= endTime;
+  // Check if the current time (in UTC+7) is within the opening hours
+  return currentTimeUTCPlus7 >= startTime && currentTimeUTCPlus7 <= endTime;
 }
 
 // Store item component
