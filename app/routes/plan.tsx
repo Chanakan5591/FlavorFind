@@ -684,7 +684,7 @@ export default function NewPlan({ loaderData }: Route.ComponentProps) {
 
   return (
     <>
-      <VStack>
+      <VStack py='4'>
         <Text fontSize="2xl" fontWeight="semibold">
           Meal Plan
         </Text>
@@ -809,12 +809,15 @@ export default function NewPlan({ loaderData }: Route.ComponentProps) {
           >
             Get me a new meal!
           </Button>
-          <Button colorPalette='accent' width="10rem">Do a survey</Button>
+          <Link to='/survey'>
+            <Button colorPalette='accent' width="10rem">Do a survey</Button>
+          </Link>
           <Link to="/">
             <Button width="10rem">Go back</Button>
           </Link>
         </HStack>
       </VStack>
+
       <Confetti mode="boom" particleCount={60} spreadDeg={120} y={0.3} />
     </>
   );

@@ -71,7 +71,9 @@ export default function App() {
       <Box
         css={{
           width: "100%",
-          height: "100%",
+          height: "100svh",
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
         <Navbar />
