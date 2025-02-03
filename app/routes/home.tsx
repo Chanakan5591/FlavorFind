@@ -40,7 +40,7 @@ import {
   SelectValueText,
 } from "~/components/ui/select";
 import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
-import { useFetcher, useSubmit } from "react-router";
+import { Await, useAsyncValue, useFetcher, useSubmit } from "react-router";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import { useCookies } from "react-cookie";
 import { verifyClientString } from "~/util/hmac.server";
@@ -64,8 +64,8 @@ export function meta({ }: Route.MetaArgs) {
 }
 
 // react router loader
-export async function loader({ context }: Route.LoaderArgs) {
-  const canteens = await prisma.canteens.findMany({
+export function loader({ context }: Route.LoaderArgs) {
+  const canteensPromise = prisma.canteens.findMany({
     include: {
       stores: {
         include: {
@@ -75,14 +75,18 @@ export async function loader({ context }: Route.LoaderArgs) {
     },
   });
 
-  return canteens;
+  return {
+    canteens: canteensPromise.then()
+  };
 }
+
+const LazyCafeteriaList = React.lazy(() => import("~/components/CafeteriaList"))
 
 export async function action({ request }: Route.ActionArgs) {
   let formData = await request.formData();
-  let storeId = await formData.get("storeId");
-  let newUserRating = await formData.get("newRating");
-  let hmac = (await formData.get("hmac")) as string;
+  let storeId = formData.get("storeId");
+  let newUserRating = formData.get("newRating");
+  let hmac = (formData.get("hmac")) as string;
 
   const clientIP = getClientIPAddress(request);
   const fingerprint = hmac.split(":")[0];
@@ -131,26 +135,13 @@ export async function action({ request }: Route.ActionArgs) {
   return { ok: true, new_store: ratings.store };
 }
 
-// (Not used here, but keeping the memoized version available if needed)
-const MemoizedSelectRoot = React.memo(SelectRoot);
-
 // Jotai atom for loading state
 const isLoadingAtom = atom(false);
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const canteensData = loaderData as CanteenWithStores[];
+  const { canteens } = loaderData
 
-  const [canteens, setCanteens] = useState(canteensData);
   const [isLoading, setIsLoading] = useAtom(isLoadingAtom);
-
-  const canteens_collection = useMemo(() => {
-    return createListCollection({
-      items: canteens,
-      itemToString: (canteen: CanteenWithStores) => canteen.name,
-      itemToValue: (canteen: CanteenWithStores) => canteen.id,
-    });
-  }, [canteens]);
-
   const [selectedCanteens, setSelectedCanteens] = useAtom(selectedCanteensAtom);
   const [priceRange, setPriceRange] = useAtom(priceRangeAtom);
   const [cookies, setCookie] = useCookies(["nomnom"]);
@@ -288,9 +279,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   });
 
   const [filters, setFilters] = useAtom(filtersAtom);
-
-  const id = useId();
-
   // --- For all filter changes (select, slider, checkboxes) we use a debounce effect
   // to “cancel” previous processing and turn off isLoading after a short delay. ---
   useEffect(() => {
@@ -309,6 +297,19 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     [setIsLoading, setSelectedCanteens],
   );
 
+  const [canteensCollection, setCanteensCollection] = useState<any>(null);
+  // When the deferred data resolves we can initialize local state if needed.
+  const initCanteensCollection = (resolvedCanteens: CanteenWithStores[]) => {
+    const collection = createListCollection({
+      items: resolvedCanteens,
+      itemToString: (canteen: CanteenWithStores) => canteen.name,
+      itemToValue: (canteen: CanteenWithStores) => canteen.id,
+    });
+    setCanteensCollection(collection);
+  };
+
+
+
   return (
     <Box padding={8} colorPalette="brand">
       <Stack direction="column">
@@ -319,26 +320,34 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           mb={{ md: 0, base: 4 }}
         >
           <Box width="full" height={20}>
-            <SelectRoot
-              collection={canteens_collection}
-              value={selectedCanteens}
-              onValueChange={({ value }) => handleCafeteriaChange(value)}
-              rounded="2xl"
-              variant="subtle"
-              multiple
-            >
-              <SelectLabel>Select Cafeteria</SelectLabel>
-              <SelectTrigger clearable>
-                <SelectValueText placeholder="โรงอาหาร" />
-              </SelectTrigger>
-              <SelectContent>
-                {canteens_collection.items.map((canteen) => (
-                  <SelectItem item={canteen} key={canteen.id}>
-                    {canteen.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </SelectRoot>
+            {canteensCollection ? (
+              <SelectRoot
+                collection={canteensCollection}
+                value={selectedCanteens}
+                onValueChange={({ value }) => {
+                  setIsLoading(true);
+                  setSelectedCanteens(value);
+                }}
+                rounded="2xl"
+                variant="subtle"
+                multiple
+              >
+                <SelectLabel>Select Cafeteria</SelectLabel>
+                <SelectTrigger clearable>
+                  <SelectValueText placeholder="โรงอาหาร" />
+                </SelectTrigger>
+                <SelectContent>
+                  {canteensCollection.items.map((canteen: any) => (
+                    <SelectItem item={canteen} key={canteen.id}>
+                      {canteen.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </SelectRoot>
+            ) : (
+              // Optionally, you can show a lightweight placeholder until the canteens are ready.
+              <Skeleton height="100%" width="100%" />
+            )}
           </Box>
           <Box width="full">
             <Slider.RootProvider value={priceSlider} width="full">
@@ -502,17 +511,31 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           <PlanDialog />
         </Flex>
       </Stack>
-      {isLoading ? (
-        <Skeleton height="500px" />
-      ) : (
-        <CafeteriaList
-          canteens={canteens}
-          priceRange={priceRange}
-          selectedCafeteria={selectedCanteens}
-          onUserRatingChange={onUserRatingChange}
-          clientFingerprint={clientFingerprint}
-        />
-      )}
+      <React.Suspense fallback={<Skeleton height="500px" />}>
+        <Await
+          resolve={canteens}
+          errorElement={<div>Could not load canteens.</div>}
+        >
+          {(resolvedCanteens: CanteenWithStores[]) => {
+            // Initialize the select collection once data is available
+            if (!canteensCollection) {
+              initCanteensCollection(resolvedCanteens);
+            }
+            return (
+              <CafeteriaList
+                canteens={resolvedCanteens}
+                priceRange={priceRange}
+                selectedCafeteria={selectedCanteens}
+                onUserRatingChange={(storeId, newRating) =>
+                  // your onUserRatingChange callback
+                  onUserRatingChange(storeId, newRating)
+                }
+                clientFingerprint={clientFingerprint}
+              />
+            );
+          }}
+        </Await>
+      </React.Suspense>
     </Box>
   );
 }
