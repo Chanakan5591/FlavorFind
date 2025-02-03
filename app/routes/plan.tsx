@@ -809,10 +809,10 @@ export default function NewPlan({ loaderData }: Route.ComponentProps) {
           >
             Get me a new meal!
           </Button>
-          <Link to='/survey'>
+          <Link to='/survey' prefetch="viewport">
             <Button colorPalette='accent' width="10rem">Do a survey</Button>
           </Link>
-          <Link to="/">
+          <Link to="/" prefetch='viewport'>
             <Button width="10rem">Go back</Button>
           </Link>
         </HStack>
