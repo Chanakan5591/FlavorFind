@@ -78,7 +78,7 @@ function xoshiro128ss(a: number) {
     a ^ 0xc2b2ae35,
   ]);
 
-  return function () {
+  return function() {
     let [s0, s1, s2, s3] = state;
     let result = (s1 * 5) << 7;
     result = (result ^ (result >>> 11)) >>> 0;
@@ -267,8 +267,8 @@ interface AvailableStoresForMeal {
 interface SpecificStoreWithMeal {
   meal: Meal;
   canteenName?: string;
-  foodStore: stores;
-  drinkStore: stores;
+  foodStore?: stores;
+  drinkStore?: stores;
 }
 
 /**
@@ -277,7 +277,6 @@ interface SpecificStoreWithMeal {
 function selectRandomStores(
   mealsStores: AvailableStoresForMeal[],
   planId: string,
-  priceRange: number[],
 ) {
   const selectedStores: SpecificStoreWithMeal[] = [];
   const usedFoodStores: Set<string> = new Set();
@@ -339,8 +338,8 @@ function selectRandomStores(
 
     selectedStores.push({
       meal: mealInfo,
-      foodStore: pickedFoodStore!,
-      drinkStore: pickedDrinkStore!, // This will handle scenarios where a drink store is not found
+      foodStore: pickedFoodStore,
+      drinkStore: pickedDrinkStore, // This will handle scenarios where a drink store is not found
     });
   }
 
@@ -470,7 +469,6 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     rice_curry: data.rice_curry === "1",
     steak: data.steak === "1",
     japanese: data.japanese === "1",
-    beverage: data.beverage === "1",
     others: data.others === "1",
   };
 
@@ -500,8 +498,17 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   const selectedStoresForEachMeal = selectRandomStores(
     allStoresInCriteria,
     planId,
-    priceRange,
   );
+
+  for (const mealstore of selectedStoresForEachMeal) {
+    if (!mealstore.foodStore || !mealstore.drinkStore) {
+      return {
+        selectedMenu: [],
+        budgetUsed: 0,
+        totalPlannedBudgets
+      }
+    }
+  }
 
   // assign canteen name to each store
   selectedStoresForEachMeal.forEach((mealStore) => {
@@ -521,12 +528,12 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
     const drinkOptions = drinkStore
       ? drinkStore.menu.filter(
-          (menu) =>
-            menu.category === "DRINK" &&
-            menu.price >= priceRange[0] &&
-            menu.price <= priceRange[1] &&
-            menu.sub_category !== "toppings",
-        )
+        (menu) =>
+          menu.category === "DRINK" &&
+          menu.price >= priceRange[0] &&
+          menu.price <= priceRange[1] &&
+          menu.sub_category !== "toppings",
+      )
       : [];
     const filteredMenu = foodStore.menu.filter(
       (menu) =>
@@ -591,12 +598,12 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     const { meal, foodStore, drinkStore, canteenName } = mealStore;
     const drinkOptions = drinkStore
       ? drinkStore.menu.filter(
-          (menu) =>
-            menu.category === "DRINK" &&
-            menu.price >= priceRange[0] &&
-            menu.price <= priceRange[1] &&
-            menu.sub_category !== "toppings",
-        )
+        (menu) =>
+          menu.category === "DRINK" &&
+          menu.price >= priceRange[0] &&
+          menu.price <= priceRange[1] &&
+          menu.sub_category !== "toppings",
+      )
       : [];
     const filteredMenu = foodStore.menu.filter(
       (menu) =>
@@ -795,7 +802,6 @@ export default function NewPlan({ loaderData }: Route.ComponentProps) {
         <HStack>
           <Button
             width="10rem"
-            colorPalette="accent"
             onClick={() => {
               const id = createId();
               navigate(`/plan/${encodedParams}/${id}`);
@@ -803,7 +809,7 @@ export default function NewPlan({ loaderData }: Route.ComponentProps) {
           >
             Get me a new meal!
           </Button>
-          <Button width="10rem">Save this plan</Button>
+          <Button colorPalette='accent' width="10rem">Do a survey</Button>
           <Link to="/">
             <Button width="10rem">Go back</Button>
           </Link>

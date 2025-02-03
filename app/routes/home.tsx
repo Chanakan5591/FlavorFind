@@ -498,18 +498,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             >
               อื่นๆ
             </Checkbox>
-            <Checkbox
-              checked={filters.beverage}
-              onCheckedChange={(e) => {
-                setIsLoading(true);
-                setFilters((prev) => ({
-                  ...prev,
-                  beverage: e.checked as boolean,
-                }));
-              }}
-            >
-              เครื่องดื่ม
-            </Checkbox>
           </Flex>
           <PlanDialog />
         </Flex>

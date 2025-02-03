@@ -118,7 +118,7 @@ const StoreItem = React.memo(
                         0,
                       ) /
                         store.ratings.length) *
-                        100,
+                      100,
                     ) / 100
                   }
                   userRating={store.userStoreRating}
@@ -225,10 +225,10 @@ const CanteenItem = React.memo(
               )}
             </Grid>
           </Card.Body>
-          <Card.Footer justifyContent="flex-end">
+          {/* <Card.Footer justifyContent="flex-end">
             <Button variant="outline">ปุ่ม</Button>
             <Button>ทำไรดี</Button>
-          </Card.Footer>
+          </Card.Footer> */}
         </Card.Root>
       </GridItem>
     );
