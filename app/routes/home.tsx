@@ -1,35 +1,15 @@
-/*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Copyright 2025 Chanakan Moongthin.
- */
 import {
   Box,
-  Button,
   createListCollection,
-  HStack,
   Stack,
-  useDisclosure,
   Skeleton,
   useSlider,
   Slider,
-  Grid,
   Flex,
   type SliderValueChangeDetails,
 } from "@chakra-ui/react";
 import type { Route } from "./+types/home";
 import prisma from "~/db.server";
-import CafeteriaList from "~/components/CafeteriaList";
 import type { CanteenWithStores } from "~/types";
 import {
   SelectContent,
@@ -39,8 +19,14 @@ import {
   SelectTrigger,
   SelectValueText,
 } from "~/components/ui/select";
-import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
-import { Await, useAsyncValue, useFetcher, useSubmit } from "react-router";
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+  useTransition,
+  useDeferredValue,
+} from "react";
+import { Await, useFetcher } from "react-router";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import { useCookies } from "react-cookie";
 import { verifyClientString } from "~/util/hmac.server";
@@ -48,9 +34,11 @@ import { toaster } from "~/components/ui/toaster";
 import { useFetcherQueueWithPromise } from "~/hooks/MagicFetcher";
 import { getClientIPAddress } from "~/util/ip.server";
 import { rateLimiterService } from "~/util/ratelimit.server";
-import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
+// Removed isLoadingAtom since we now use useTransition
+import { atom, useAtom } from "jotai";
 import { Checkbox } from "~/components/ui/checkbox";
 import { PlanDialog } from "~/components/PlanDialog";
+// Your existing atoms for selectedCanteens, priceRange, and filters
 import { selectedCanteensAtom, priceRangeAtom, filtersAtom } from "~/stores";
 
 export function meta({ }: Route.MetaArgs) {
@@ -65,6 +53,7 @@ export function meta({ }: Route.MetaArgs) {
 
 // react router loader
 export function loader({ context }: Route.LoaderArgs) {
+  // Note: we still return a promise that resolves to canteens
   const canteensPromise = prisma.canteens.findMany({
     include: {
       stores: {
@@ -76,32 +65,30 @@ export function loader({ context }: Route.LoaderArgs) {
   });
 
   return {
-    canteens: canteensPromise.then()
+    canteens: canteensPromise.then(), // this returns a promise
   };
 }
 
-const LazyCafeteriaList = React.lazy(() => import("~/components/CafeteriaList"))
+const LazyCafeteriaList = React.lazy(() => import("~/components/CafeteriaList"));
 
 export async function action({ request }: Route.ActionArgs) {
   let formData = await request.formData();
   let storeId = formData.get("storeId");
   let newUserRating = formData.get("newRating");
-  let hmac = (formData.get("hmac")) as string;
+  let hmac = formData.get("hmac") as string;
 
   const clientIP = getClientIPAddress(request);
   const fingerprint = hmac.split(":")[0];
 
   const requestAllowed = await rateLimiterService.handleTokenBucketRequest(
     fingerprint,
-    clientIP ?? "",
+    clientIP ?? ""
   );
 
   if (!requestAllowed) {
     return { ok: false, status: 429, body: "Rate limit exceeded" };
   }
 
-  // decode HMAC by splitting it by colon, fingerprintingId, hmac, and nonce
-  // then verify the HMAC by generating HMAC from fingerprintId and nonce
   const hmac_validated = verifyClientString(hmac);
 
   if (!hmac_validated) {
@@ -135,23 +122,34 @@ export async function action({ request }: Route.ActionArgs) {
   return { ok: true, new_store: ratings.store };
 }
 
-// Jotai atom for loading state
-const isLoadingAtom = atom(false);
-
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const { canteens } = loaderData
-
-  const [isLoading, setIsLoading] = useAtom(isLoadingAtom);
+  const { canteens } = loaderData; // canteens is now a promise
   const [selectedCanteens, setSelectedCanteens] = useAtom(selectedCanteensAtom);
   const [priceRange, setPriceRange] = useAtom(priceRangeAtom);
+  const [filters, setFilters] = useAtom(filtersAtom);
   const [cookies, setCookie] = useCookies(["nomnom"]);
 
-  const [firstTime, setFirstTime] = useState(false);
   const [clientFingerprint, setClientFingerprint] = useState("");
+  const [firstTime, setFirstTime] = useState(false);
 
-  let hmacFetcher = useFetcher();
-  let ratingFetcher = useFetcherQueueWithPromise();
+  // *** NEW: local state for canteens ***
+  const [localCanteens, setLocalCanteens] = useState<CanteenWithStores[]>([]);
 
+  const hmacFetcher = useFetcher();
+  const ratingFetcher = useFetcherQueueWithPromise();
+
+  // React concurrent hooks – useTransition for background work,
+  // and useDeferredValue so that heavy recalculation is deferred.
+  const [isPending, startTransition] = useTransition();
+
+  // We create deferred versions of our filtering state so that the interactive
+  // controls update immediately while the heavy work (e.g. filtering & re‐rendering
+  // the list) happens in the background.
+  const deferredFilters = useDeferredValue(filters);
+  const deferredSelectedCanteens = useDeferredValue(selectedCanteens);
+  const deferredPriceRange = useDeferredValue(priceRange);
+
+  // Initialize client fingerprint from cookie
   useEffect(() => {
     if (cookies["nomnom"]) {
       setClientFingerprint(cookies["nomnom"].split(":")[0]);
@@ -165,7 +163,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         fp.get().then((result) => {
           hmacFetcher.submit(
             { fingerprint: result.visitorId },
-            { method: "POST", action: "/api/science/new_experiment" },
+            { method: "POST", action: "/api/science/new_experiment" }
           );
         });
       });
@@ -182,18 +180,20 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     }
   }, [hmacFetcher.state]);
 
+  // --- Update local canteens when a rating update occurs ---
   useEffect(() => {
     if (ratingFetcher.state === "idle" && ratingFetcher.data) {
       if (!ratingFetcher.data.ok) {
         toaster.error({
           title: "An error occurred",
-          description: "We couldn't update your rating, please try again later",
+          description:
+            "We couldn't update your rating, please try again later",
         });
         return;
       }
       const updatedStore = ratingFetcher.data.new_store as any;
 
-      setCanteens((prevCanteens) =>
+      setLocalCanteens((prevCanteens) =>
         prevCanteens.map((canteen) => {
           if (canteen.id === updatedStore.canteenId) {
             return {
@@ -207,7 +207,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             };
           }
           return canteen;
-        }),
+        })
       );
     }
   }, [ratingFetcher.state, ratingFetcher.data]);
@@ -215,7 +215,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const onUserRatingChange = async (storeId: string, newRating: number) => {
     const ratingSubmissionPromise = ratingFetcher.enqueueSubmit(
       { storeId: storeId, newRating: newRating, hmac: cookies["nomnom"] },
-      { method: "POST" },
+      { method: "POST" }
     );
 
     toaster.promise(ratingSubmissionPromise, {
@@ -229,7 +229,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       },
       error: {
         title: "An error occurred",
-        description: "We couldn't update your rating, please try again later",
+        description:
+          "We couldn't update your rating, please try again later",
       },
     });
   };
@@ -243,62 +244,41 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     const maxRange = 150;
     const rangeDifference = maxRange - minRange;
 
-    const mappedValue = Math.round(
-      minRange + (percentage / 100) * rangeDifference,
-    );
+    const mappedValue = Math.round(minRange + (percentage / 100) * rangeDifference);
 
     return mappedValue;
   }
 
   const [priceSliderValue, setPriceSliderValue] = useState([0, 100]);
 
-  // --- Slider callbacks (note the callback now receives the updated value array directly) ---
+  // Here, we update the slider value immediately and then update the
+  // actual priceRange in a transition so that the heavy filtering work is deferred.
   const handlePriceRangeChange = useCallback(
     (details: SliderValueChangeDetails) => {
+      const newPriceSlider = [details.value[0], Math.max(details.value[1], 31)];
+      setPriceSliderValue(newPriceSlider);
       const minPrice = mapPercentageToRange(details.value[0]);
-      let maxPrice = Math.max(mapPercentageToRange(details.value[1]), 50);
-      const newPriceRange = [details.value[0], Math.max(details.value[1], 31)];
-      setPriceSliderValue(newPriceRange);
-      setPriceRange([minPrice, maxPrice]);
-      // Immediately start the “loading” state for new filter changes.
-      setIsLoading(true);
+      const maxPrice = Math.max(mapPercentageToRange(details.value[1]), 50);
+      startTransition(() => {
+        setPriceRange([minPrice, maxPrice]);
+      });
     },
-    [setIsLoading, setPriceRange],
+    [setPriceRange, startTransition]
   );
 
-  const handleSliderMouseUp = useCallback(() => {
-    setIsLoading(false);
-  }, [setIsLoading]);
-
-  // Note: useSlider’s onValueChange now provides the value directly.
-  const priceSlider = useSlider({
-    thumbAlignment: "center",
-    value: priceSliderValue,
-    onValueChange: handlePriceRangeChange,
-    onValueChangeEnd: handleSliderMouseUp,
-  });
-
-  const [filters, setFilters] = useAtom(filtersAtom);
-  // --- For all filter changes (select, slider, checkboxes) we use a debounce effect
-  // to “cancel” previous processing and turn off isLoading after a short delay. ---
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [filters, selectedCanteens, priceRange, setIsLoading]);
-
-  // --- Handlers for Select and Checkboxes ---
+  // For checkboxes and select, we update the immediate state and then update
+  // the applied state (filters, selectedCanteens) in a transition.
   const handleCafeteriaChange = useCallback(
     (value: string[]) => {
-      setIsLoading(true);
-      setSelectedCanteens(value);
+      startTransition(() => {
+        setSelectedCanteens(value);
+      });
     },
-    [setIsLoading, setSelectedCanteens],
+    [setSelectedCanteens, startTransition]
   );
 
+  // Initialize the select collection once we have canteens data
   const [canteensCollection, setCanteensCollection] = useState<any>(null);
-  // When the deferred data resolves we can initialize local state if needed.
   const initCanteensCollection = (resolvedCanteens: CanteenWithStores[]) => {
     const collection = createListCollection({
       items: resolvedCanteens,
@@ -308,7 +288,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     setCanteensCollection(collection);
   };
 
-
+  const priceSlider = useSlider({
+    thumbAlignment: "center",
+    value: priceSliderValue,
+    onValueChange: handlePriceRangeChange,
+    //    onValueChangeEnd: handleSliderMouseUp
+  })
 
   return (
     <Box padding={8} colorPalette="brand">
@@ -325,8 +310,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 collection={canteensCollection}
                 value={selectedCanteens}
                 onValueChange={({ value }) => {
-                  setIsLoading(true);
-                  setSelectedCanteens(value);
+                  // Update immediately in a transition
+                  startTransition(() => {
+                    setSelectedCanteens(value);
+                  });
                 }}
                 rounded="2xl"
                 variant="subtle"
@@ -345,7 +332,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 </SelectContent>
               </SelectRoot>
             ) : (
-              // Optionally, you can show a lightweight placeholder until the canteens are ready.
               <Skeleton height="100%" width="100%" />
             )}
           </Box>
@@ -387,14 +373,16 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             gap={4}
             justifyContent={{ md: "left", base: "center" }}
           >
+            {/* Example Checkbox – update in a transition so the UI tick is instant while the filtering work is deferred */}
             <Checkbox
               checked={filters.noAircon}
               onCheckedChange={(e) => {
-                setIsLoading(true);
-                setFilters((prev) => ({
-                  ...prev,
-                  noAircon: e.checked as boolean,
-                }));
+                startTransition(() => {
+                  setFilters((prev) => ({
+                    ...prev,
+                    noAircon: e.checked as boolean,
+                  }));
+                });
               }}
             >
               ไม่มีแอร์
@@ -402,7 +390,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <Checkbox
               checked={filters.withAircon}
               onCheckedChange={(e) => {
-                setIsLoading(true);
                 setFilters((prev) => ({
                   ...prev,
                   withAircon: e.checked as boolean,
@@ -414,7 +401,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <Checkbox
               checked={filters.noodles}
               onCheckedChange={(e) => {
-                setIsLoading(true);
                 setFilters((prev) => ({
                   ...prev,
                   noodles: e.checked as boolean,
@@ -426,7 +412,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <Checkbox
               checked={filters.soup_curry}
               onCheckedChange={(e) => {
-                setIsLoading(true);
                 setFilters((prev) => ({
                   ...prev,
                   soup_curry: e.checked as boolean,
@@ -438,7 +423,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <Checkbox
               checked={filters.chicken_rice}
               onCheckedChange={(e) => {
-                setIsLoading(true);
                 setFilters((prev) => ({
                   ...prev,
                   chicken_rice: e.checked as boolean,
@@ -450,7 +434,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <Checkbox
               checked={filters.rice_curry}
               onCheckedChange={(e) => {
-                setIsLoading(true);
                 setFilters((prev) => ({
                   ...prev,
                   rice_curry: e.checked as boolean,
@@ -462,7 +445,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <Checkbox
               checked={filters.somtum_northeastern}
               onCheckedChange={(e) => {
-                setIsLoading(true);
                 setFilters((prev) => ({
                   ...prev,
                   somtum_northeastern: e.checked as boolean,
@@ -474,7 +456,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <Checkbox
               checked={filters.steak}
               onCheckedChange={(e) => {
-                setIsLoading(true);
                 setFilters((prev) => ({
                   ...prev,
                   steak: e.checked as boolean,
@@ -486,7 +467,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <Checkbox
               checked={filters.japanese}
               onCheckedChange={(e) => {
-                setIsLoading(true);
                 setFilters((prev) => ({
                   ...prev,
                   japanese: e.checked as boolean,
@@ -498,7 +478,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <Checkbox
               checked={filters.others}
               onCheckedChange={(e) => {
-                setIsLoading(true);
                 setFilters((prev) => ({
                   ...prev,
                   others: e.checked as boolean,
@@ -511,26 +490,31 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           <PlanDialog />
         </Flex>
       </Stack>
+      {/* --- Use Suspense and Await for the deferred data --- */}
       <React.Suspense fallback={<Skeleton height="500px" />}>
         <Await
           resolve={canteens}
           errorElement={<div>Could not load canteens.</div>}
         >
           {(resolvedCanteens: CanteenWithStores[]) => {
-            // Initialize the select collection once data is available
-            if (!canteensCollection) {
+            // On first resolution, initialize both the select collection and local state.
+            if (localCanteens.length === 0) {
+              setLocalCanteens(resolvedCanteens);
               initCanteensCollection(resolvedCanteens);
             }
             return (
-              <CafeteriaList
-                canteens={resolvedCanteens}
-                priceRange={priceRange}
-                selectedCafeteria={selectedCanteens}
-                onUserRatingChange={(storeId, newRating) =>
-                  // your onUserRatingChange callback
-                  onUserRatingChange(storeId, newRating)
+              <LazyCafeteriaList
+                // Pass the local data, and use the deferred filtering state so that the heavy
+                // filtering calculation happens in the background.
+                canteens={
+                  localCanteens.length ? localCanteens : resolvedCanteens
                 }
+                priceRange={deferredPriceRange}
+                selectedCafeteria={deferredSelectedCanteens}
+                filters={deferredFilters}
+                onUserRatingChange={onUserRatingChange}
                 clientFingerprint={clientFingerprint}
+                isUpdating={isPending} // Optionally, LazyCafeteriaList can show its own skeleton/placeholder when isPending is true.
               />
             );
           }}
@@ -539,3 +523,4 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     </Box>
   );
 }
+
