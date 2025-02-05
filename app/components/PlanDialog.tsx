@@ -260,7 +260,7 @@ export function PlanDialog() {
               </Field>
             </Grid>
 
-            <Collapsible.Root open={mealsPlanningAmount > 0}>
+            <Collapsible.Root>
               <Collapsible.Trigger
                 paddingY="3"
                 cursor="pointer"
