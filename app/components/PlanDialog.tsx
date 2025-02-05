@@ -67,7 +67,7 @@ type Inputs = {
   withBeverage: boolean;
 };
 
-export function PlanDialog() {
+export default function PlanDialog() {
   const [withBeverage, setWithBeverage] = useState(true);
   const [mealsPlanningAmount, setMealsPlanningAmount] = useAtom(
     mealsPlanningAmountAtom,

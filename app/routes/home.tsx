@@ -37,7 +37,6 @@ import { rateLimiterService } from "~/util/ratelimit.server";
 // Removed isLoadingAtom since we now use useTransition
 import { atom, useAtom } from "jotai";
 import { Checkbox } from "~/components/ui/checkbox";
-import { PlanDialog } from "~/components/PlanDialog";
 // Your existing atoms for selectedCanteens, priceRange, and filters
 import { selectedCanteensAtom, priceRangeAtom, filtersAtom } from "~/stores";
 
@@ -70,6 +69,7 @@ export function loader({ context }: Route.LoaderArgs) {
 }
 
 const LazyCafeteriaList = React.lazy(() => import("~/components/CafeteriaList"));
+const LazyPlanDialog = React.lazy(() => import("~/components/PlanDialog"))
 
 export async function action({ request }: Route.ActionArgs) {
   let formData = await request.formData();
@@ -487,7 +487,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               อื่นๆ
             </Checkbox>
           </Flex>
-          <PlanDialog />
+          <LazyPlanDialog />
         </Flex>
       </Stack>
       {/* --- Use Suspense and Await for the deferred data --- */}

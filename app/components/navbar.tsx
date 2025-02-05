@@ -15,7 +15,6 @@
  */
 import { Box, Flex, Button } from "@chakra-ui/react";
 import { Link } from "react-router";
-import { PlanDialog } from "./PlanDialog";
 
 export default function Navbar() {
   return (
