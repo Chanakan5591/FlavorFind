@@ -30,6 +30,7 @@ import {
   Grid,
   HStack,
   Progress,
+  Stack,
   Text,
   VStack,
 } from "@chakra-ui/react";
@@ -692,7 +693,7 @@ export default function NewPlan({ loaderData }: Route.ComponentProps) {
           Total budget used: ฿{loaderData.budgetUsed}/฿
           {loaderData.totalPlannedBudgets}
         </Text>
-        <HStack width="24rem">
+        <HStack md={{ width: "24rem" }} width='16rem'>
           <Progress.Root
             value={budgetPercentage}
             width="full"
@@ -799,9 +800,16 @@ export default function NewPlan({ loaderData }: Route.ComponentProps) {
             </Box>
           ))}
         </Grid>
-        <HStack>
+        <Box md={{ gap: 4, flexDir: 'row', width: 'fit-content', display: 'flex', gridTemplateColumns: 'unset' }} display='grid' gridTemplateColumns='repeat(2, 1fr)' width='18rem' gap={2} flexDir='column' css={{
+          "& > *:last-child:nth-of-type(odd)": {
+            gridColumn: "1 / -1",
+          },
+        }}
+        >
           <Button
-            width="10rem"
+            md={{
+              width: '10rem'
+            }}
             onClick={() => {
               const id = createId();
               navigate(`/plan/${encodedParams}/${id}`);
@@ -810,12 +818,12 @@ export default function NewPlan({ loaderData }: Route.ComponentProps) {
             Get me a new meal!
           </Button>
           <Link to='/survey' prefetch="viewport">
-            <Button colorPalette='accent' width="10rem">Do a survey</Button>
+            <Button md={{ width: '10rem' }} width='full' colorPalette='accent'>Do a survey</Button>
           </Link>
           <Link to="/" prefetch='viewport'>
-            <Button width="10rem">Go back</Button>
+            <Button md={{ width: '10rem' }} width='full'>Go back</Button>
           </Link>
-        </HStack>
+        </Box>
       </VStack>
 
       <Confetti mode="boom" particleCount={60} spreadDeg={120} y={0.3} />

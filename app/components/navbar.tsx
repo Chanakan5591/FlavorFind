@@ -21,7 +21,7 @@ export default function Navbar() {
     <Box px={4} colorPalette="brand">
       {/* Centered Logo */}
       <Flex h={16} w="full" justifyContent="space-between" alignItems="center">
-        <Button visibility='hidden' disabled>Take a Survey</Button>
+        <Button visibility='hidden' disabled>Take Survey</Button>
         <Link to="/">
           <Box
             fontWeight="bold"
@@ -64,7 +64,7 @@ export default function Navbar() {
           </Box>
         </Link>
         <Link to='/survey' prefetch="viewport">
-          <Button colorPalette='accent'>Take a Survey</Button>
+          <Button colorPalette='accent'>Take Survey</Button>
         </Link>
 
       </Flex>
