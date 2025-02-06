@@ -54,10 +54,10 @@ import { useFetcher, useNavigate } from "react-router";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { useAtomValue } from "jotai";
 import { createId } from "@paralleldrive/cuid2";
-import pako from "pako";
 import posthog from "posthog-js";
 import { useCookies } from "react-cookie";
 import { useId } from "react";
+import { deflate } from "pako";
 
 type Inputs = {
   meals: Array<{
@@ -97,8 +97,18 @@ export default function PlanDialog() {
     },
   });
 
+  function uint8ArrayToBase64url(uint8Array: Uint8Array) {
+    let binary = '';
+    for (let i = 0; i < uint8Array.length; i++) {
+      binary += String.fromCharCode(uint8Array[i]);
+    }
+    const base64 = btoa(binary);
+    return base64.replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+  }
+
   const onPlanSubmit: SubmitHandler<Inputs> = async (data) => {
-    console.log(data);
     let formDataToSend = {
       ...data,
       mealsPlanningAmount,
@@ -110,8 +120,6 @@ export default function PlanDialog() {
 
     // append filters to the form data
     formDataToSend = Object.assign(formDataToSend, filters);
-
-    let tmp = {};
 
     // Preprocess the object:
     const preprocessedData = Object.entries(formDataToSend).reduce(
@@ -160,29 +168,17 @@ export default function PlanDialog() {
       .map(([key, value]) => `${key}=${value}`)
       .join(";");
 
-    async function compressAndEncode(str: string) {
-      // 1. Convert the string to a Uint8Array
-      const uint8Array = new TextEncoder().encode(str);
-
-      const compressed = pako.deflate(uint8Array);
-
-      // 3. Encode the compressed Uint8Array to URL-safe Base64
-      const base64 = btoa(String.fromCharCode(...compressed))
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=/g, "");
-
-      return base64;
-    }
-
-    const encodedParam = await compressAndEncode(newPlanParams);
+    const deflated = deflate(newPlanParams)
+    const encodedParam = uint8ArrayToBase64url(deflated);
+    console.log(encodedParam)
 
     posthog.capture("user_planned_meal", {
       client: cookies["nomnom"],
       param: encodedParam,
     });
 
-    navigate(`/plan/${encodedParam}/${createId()}`);
+    const path = `/plan/${encodedParam}/${createId()}`
+    navigate(path);
   };
 
   // // Function to handle input change

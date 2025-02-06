@@ -84,9 +84,13 @@ export default function App() {
   );
 }
 
-export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  //  import.meta.env.DEV = false;
+function reportToSentry(error: unknown) {
+  if (!import.meta.env.DEV) {
+    return Sentry.captureException(error)
+  } else return undefined
+}
 
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let stack: string | undefined;
   let message = "We have a problem :("
   let runtimeError: boolean = false;
@@ -107,11 +111,11 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       }
       if (error.status.toString()[0] != '4') {
         runtimeError = true
-        sentid = Sentry.captureException(error)
+        sentid = reportToSentry(error)
       }
     } else {
       runtimeError = true
-      // Sentry.captureException(error);
+      sentid = reportToSentry(error)
     }
   }
   if (isRouteErrorResponse(error)) {
@@ -231,8 +235,8 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
           }}>Reporting ID: {sentid}</span>
         </>
       }
-      <Link to='/'>Go Back</Link>
-      <Link to='/survey'>Take a Survey</Link>
+      <a href='/'>Go Back</a>
+      <a href='/survey'>Take a Survey</a>
     </main>
   );
 }

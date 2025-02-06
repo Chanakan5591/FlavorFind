@@ -16,11 +16,11 @@
 import type { Route } from "./+types/plan";
 import {
   Link,
+  redirect,
   useNavigate,
   useParams,
   type LoaderFunctionArgs,
 } from "react-router";
-import pako from "pako";
 import prisma from "~/db.server";
 import { findMatchingStores } from "~/util/datentime.server";
 import type { stores, StoresMenu } from "@prisma/ffdb";
@@ -37,6 +37,7 @@ import {
 import Confetti from "react-confetti-boom";
 import { Button } from "~/components/ui/button";
 import { createId } from "@paralleldrive/cuid2";
+import { Inflate } from "pako";
 
 const mappings = {
   mD: "mealsDate",
@@ -138,26 +139,43 @@ function seededRandomPick<T>(array: T[], seed: number): T {
   return array[Math.floor(rng() * array.length)];
 }
 
+function base64urlDecode(base64url: string) {
+  let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+  while (base64.length % 4) {
+    base64 += '=';
+  }
+  return decodeURIComponent(escape(atob(base64)));
+}
+
+
 /**
  * Decodes and decompresses the encoded parameters from the URL.
  */
+
 function decodeAndDecompressParams(
   encodedParams: string,
-): Record<string, string> {
-  let base64 = encodedParams.replace(/-/g, "+").replace(/_/g, "/");
-  while (base64.length % 4) {
-    base64 += "=";
+): Record<string, string> | null {
+  let params
+
+  try {
+    params = Buffer.from(encodedParams, 'base64url');
+  } catch (ex) {
+    return null
   }
 
-  const binaryString = atob(base64);
-  const uint8Array = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    uint8Array[i] = binaryString.charCodeAt(i);
+  const inflate = new Inflate()
+  inflate.push(params, true)
+
+  if (inflate.err) {
+    return null
   }
 
-  const decompressed = pako.inflate(uint8Array);
-  const plainParams = new TextDecoder().decode(decompressed);
-  const decodedParams = plainParams.split(";");
+  params = Buffer.from(inflate.result).toString('utf-8')
+
+  let decodedParams
+  try {
+    decodedParams = params.split(";");
+  } catch (ex) { return null }
 
   return decodedParams.reduce(
     (acc, param) => {
@@ -408,9 +426,11 @@ function pickMealAndDrink(
 
   // Fallback if nothing was picked
   if (!pickedFood) {
-    pickedFood = filteredMenu[0];
+    if (filteredMenu[0] !== undefined) pickedFood = filteredMenu[0]
   }
-  usedMeals.add(getMenuItemId(pickedFood));
+
+  if (pickedFood)
+    usedMeals.add(getMenuItemId(pickedFood));
 
   return {
     pickedFood,
@@ -452,6 +472,11 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   const seed = stringToHash(planId);
 
   const data = decodeAndDecompressParams(encodedParams);
+
+  if (!data) {
+    return redirect('/')
+  }
+
 
   const priceRange = data.priceRange.split(",").map(Number);
   const selectedCanteens = data.selectedCanteens.split(",");
@@ -578,10 +603,12 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     };
   });
 
+
+
   // Calculate total cost for the deterministic plan (food + drink prices)
   const deterministicTotal = selectedMenu.reduce((sum, meal) => {
     return (
-      sum + meal.pickedMeal.price + (meal.drinkMenu ? meal.drinkMenu.price : 0)
+      sum + (meal.pickedMeal && meal.pickedMeal.price ? meal.pickedMeal.price : 0 + (meal.drinkMenu && meal.drinkMenu.price ? meal.drinkMenu.price : 0))
     );
   }, 0);
 
@@ -726,54 +753,69 @@ export default function NewPlan({ loaderData }: Route.ComponentProps) {
         >
           {selectedMenu!.map((meal) => (
             <Box key={meal.meal.mealNumber}>
-              <Box
-                bg="accent.300"
-                px={4}
-                pt={4}
-                pb={2}
-                rounded="xl"
-                position="relative"
-                boxShadow="lg"
-                border="2px solid"
-                zIndex={2}
-              >
+              {meal.pickedMeal ? (
                 <Box
-                  rounded="full"
-                  bg="bg"
-                  w={4}
-                  h={4}
-                  right={2}
-                  top={2}
-                  position="absolute"
+                  bg="accent.300"
+                  px={4}
+                  pt={4}
+                  pb={2}
+                  rounded="xl"
+                  position="relative"
+                  boxShadow="lg"
                   border="2px solid"
-                ></Box>
+                  zIndex={2}
+                >
+                  <Box
+                    rounded="full"
+                    bg="bg"
+                    w={4}
+                    h={4}
+                    right={2}
+                    top={2}
+                    position="absolute"
+                    border="2px solid"
+                  ></Box>
 
-                <Text position="absolute" fontSize={16} bottom={2} left={2}>
-                  {parseInt(meal.meal.mealNumber) + 1}
-                </Text>
-                <Text position="absolute" right={2} bottom={2}>
-                  ฿{meal.pickedMeal.price}
-                </Text>
-                <VStack minW="16rem" h="full" justifyContent="space-between">
-                  <VStack gap={1} mb={4}>
-                    <Text
-                      fontSize={18}
-                      fontWeight="semibold"
-                      width="14ch"
-                      textAlign="center"
-                    >
-                      {meal.pickedMeal.name}
-                    </Text>
-                    <Text textAlign="center">@ {meal.store.name}</Text>
-                    <Text textAlign="center">{meal.canteenName}</Text>
-                  </VStack>
-                  <Text>
-                    {meal.meal.date}{" "}
-                    {meal.meal.date && meal.meal.time ? "|" : ""}{" "}
-                    {meal.meal.time}
+                  <Text position="absolute" fontSize={16} bottom={2} left={2}>
+                    {parseInt(meal.meal.mealNumber) + 1}
                   </Text>
-                </VStack>
-              </Box>
+                  <Text position="absolute" right={2} bottom={2}>
+                    ฿{meal.pickedMeal.price}
+                  </Text>
+                  <VStack minW="16rem" h="full" justifyContent="space-between">
+                    <VStack gap={1} mb={4}>
+                      <Text
+                        fontSize={18}
+                        fontWeight="semibold"
+                        width="14ch"
+                        textAlign="center"
+                      >
+                        {meal.pickedMeal.name}
+                      </Text>
+                      <Text textAlign="center">@ {meal.store.name}</Text>
+                      <Text textAlign="center">{meal.canteenName}</Text>
+                    </VStack>
+                    <Text>
+                      {meal.meal.date}{" "}
+                      {meal.meal.date && meal.meal.time ? "|" : ""}{" "}
+                      {meal.meal.time}
+                    </Text>
+                  </VStack>
+                </Box>
+              ) : (
+                <Box
+                  bg="gray.200"
+                  px={4}
+                  py={2}
+                  rounded="xl"
+                  textAlign="center"
+                  border="2px solid gray"
+                >
+                  <Text color="gray.700">Couldn't find suitable meal</Text>
+                </Box>
+              )}
+
+
               {meal.drinkMenu && meal.drinkStore && (
                 <Flex
                   bg="brand.300"
