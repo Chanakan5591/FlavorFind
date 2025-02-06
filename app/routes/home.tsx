@@ -34,10 +34,8 @@ import { toaster } from "~/components/ui/toaster";
 import { useFetcherQueueWithPromise } from "~/hooks/MagicFetcher";
 import { getClientIPAddress } from "~/util/ip.server";
 import { rateLimiterService } from "~/util/ratelimit.server";
-// Removed isLoadingAtom since we now use useTransition
-import { atom, useAtom } from "jotai";
+import { useAtom } from "jotai";
 import { Checkbox } from "~/components/ui/checkbox";
-// Your existing atoms for selectedCanteens, priceRange, and filters
 import { selectedCanteensAtom, priceRangeAtom, filtersAtom } from "~/stores";
 
 export function meta({ }: Route.MetaArgs) {

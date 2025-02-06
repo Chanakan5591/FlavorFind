@@ -16,6 +16,7 @@
 import * as Sentry from "@sentry/react";
 import {
   isRouteErrorResponse,
+  Link,
   Links,
   Meta,
   Outlet,
@@ -31,7 +32,7 @@ import Navbar from "./components/navbar";
 
 import "./global.css";
 
-import { Box, ChakraProvider } from "@chakra-ui/react";
+import { Box, ChakraProvider, VStack } from "@chakra-ui/react";
 import { Toaster } from "./components/ui/toaster";
 import PostHogPageView from "./util/pageview";
 import { system } from "theme";
@@ -50,7 +51,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body style={{
+        margin: 0,
+        padding: 0
+      }}>
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -81,35 +85,154 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
-  let stack: string | undefined;
+  //  import.meta.env.DEV = false;
 
-  if (error != null && error.status != undefined && typeof error.status === "number" && error.status.toString()[0] != '4') {
-    Sentry.captureException(error);
+  let stack: string | undefined;
+  let message = "We have a problem :("
+  let runtimeError: boolean = false;
+
+  if (import.meta.env.DEV) {
+    message = "🔥 Chanakan come fix this 🔥"
+  }
+
+  let sentid: string | undefined;
+  //sentid = 'gh'
+  let is404: boolean = false;
+
+  if (error != null) {
+    if (isRouteErrorResponse(error)) {
+      if (error.status === 404) {
+        is404 = true;
+        message = "We tried to find what you want, but it's just not there."
+      }
+      if (error.status.toString()[0] != '4') {
+        runtimeError = true
+        sentid = Sentry.captureException(error)
+      }
+    } else {
+      runtimeError = true
+      // Sentry.captureException(error);
+    }
   }
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
-    details =
-      error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
   } else if (error && error instanceof Error) {
     if (import.meta.env.DEV) {
-      details = error.message;
       stack = error.stack;
     }
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
+    <main style={{
+      height: "100svh",
+      flexDirection: "column",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }}>
+      <div style={{
+        fontSize: 24,
+        fontWeight: 600
+      }}>
+        {is404 ? (
+          <>
+            <span style={{ color: "#007a56" }}>Flavor</span>
+            <span style={{ color: "maroon" }}>Not</span>
+            <span style={{ color: "#4dc6a7" }}>Foun</span>
+            <span style={{ color: "#4dc6a7" }}>
+              <span style={{ position: "relative" }}>
+                d
+                <span
+                  style={{
+                    content: '""',
+                    position: "absolute",
+                    bottom: "2px",
+                    left: 0,
+                    width: "100%",
+                    height: "2px",
+                    backgroundColor: "#ffad52",
+                  }}
+                ></span>
+              </span>
+            </span>
+          </>
+        ) : (
+          <>
+            <span style={{ color: "#007a56" }}>Flavor</span>
+            <span style={{ color: "maroon" }}>Frie</span>
+            <span style={{ color: "maroon" }}>
+              <span style={{ position: "relative" }}>
+                d
+                <span
+                  style={{
+                    position: "absolute",
+                    top: '-1.4rem',
+                    left: 0,
+                    width: "100%",
+                    height: "2px",
+                  }}
+                >
+                  🔥
+                </span>
+              </span>
+
+            </span>
+          </>
+        )}
+      </div>
+      <h1 style={{ textAlign: "center", marginBottom: 0, maxWidth: '24ch' }}>{message}</h1>
+      {runtimeError && !import.meta.env.DEV &&
+        <>
+          <span style={{
+            fontSize: 14,
+            marginTop: 0,
+            marginBottom: 12
+          }}>And Chanakan is not happy (he's the dev)</span>
+
+          <img src='/sadbroken.png' width='200' height='200' style={{
+            borderRadius: "100%",
+            objectFit: "cover"
+          }} />
+        </>
+      }
+
       {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
-          <code>{stack}</code>
-        </pre>
+        <div style={{
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+        }}>
+          <div style={{
+            margin: 8,
+            paddingInline: 12,
+            borderRadius: "16px",
+            background: "#222436",
+            color: "#c8d3f5",
+          }}>
+            <pre style={{
+              overflowX: "auto",
+            }}>
+              <code>{stack}</code>
+            </pre>
+          </div>
+        </div>
       )}
+
+      {sentid &&
+        <>
+          <span style={{
+            marginTop: 16,
+            fontWeight: 300,
+            fontSize: 14,
+            textAlign: 'center'
+          }}>Please submit the ID below to our feedback/survey form for quicker resolution.</span>
+          <span style={{
+            fontSize: 14,
+            fontWeight: 600
+          }}>Reporting ID: {sentid}</span>
+        </>
+      }
+      <Link to='/'>Go Back</Link>
+      <Link to='/survey'>Take a Survey</Link>
     </main>
   );
 }
