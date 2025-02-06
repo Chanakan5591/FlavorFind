@@ -127,6 +127,7 @@ const StoreItem = React.memo(
             <Card.Title mt="2" display="flex" justifyContent="space-between">
               <Text>{store.name}</Text>
               <Box>
+                <Text as='span' fontSize='sm' fontWeight='normal' mr={1}>({store.ratings.length})</Text>
                 <ReviewStars
                   averageRating={
                     Math.round(
