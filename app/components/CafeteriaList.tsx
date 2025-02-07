@@ -123,6 +123,7 @@ const StoreItem = React.memo(
       FRIDAY: "ศุกร์",
       SATURDAY: "เสาร์",
     };
+
     return (
       <GridItem key={store.id}>
         <Card.Root width="full" bg="#E0F2E9">
@@ -206,6 +207,23 @@ const CanteenItem = React.memo(
     canteen: Omit<CanteenWithStores, "stores"> & { stores };
     onUserRatingChange: (storeId: string, newRating: number) => void;
   }) => {
+    const doCardTakeFreeSpace = useFeatureFlagEnabled('card-take-up-free-space')
+    const gridTemplateColumns = useMemo(() => {
+      if (doCardTakeFreeSpace) {
+        return {
+          base: "1fr",
+          md: "repeat(auto-fit, minmax(300px, 1fr))", // Adjust minmax value as needed
+        };
+      } else {
+        return {
+          base: "1fr",
+          md: "repeat(2, 1fr)",
+          xl: "repeat(3, 1fr)",
+        };
+      }
+    }, [doCardTakeFreeSpace]);
+
+
     return (
       <GridItem>
         <Card.Root
@@ -227,11 +245,7 @@ const CanteenItem = React.memo(
             </Card.Title>
             <Grid
               gap={4}
-              templateColumns={{
-                base: "1fr",
-                md: "repeat(2, 1fr)",
-                xl: "repeat(3, 1fr)",
-              }}
+              templateColumns={gridTemplateColumns}
             >
               {canteen.stores && canteen.stores.length > 0 ? (
                 canteen.stores.map((store) => (
@@ -456,7 +470,6 @@ const CafeteriaList = React.memo(
     useEffect(() => {
       scroll.scrollToTop()
     }, [currentPage])
-
 
     return (
       <div>
