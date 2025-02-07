@@ -15,7 +15,7 @@
  */
 import { PassThrough } from "node:stream";
 
-import type { AppLoadContext, EntryContext, HandleErrorFunction } from "react-router";
+import type { ActionFunctionArgs, AppLoadContext, EntryContext, HandleErrorFunction, LoaderFunctionArgs } from "react-router";
 import { createReadableStreamFromReadable } from "@react-router/node";
 import { ServerRouter } from "react-router";
 import { isbot } from "isbot";
@@ -24,6 +24,15 @@ import { renderToPipeableStream } from "react-dom/server";
 import * as Sentry from "@sentry/node";
 
 const ABORT_DELAY = 5_000;
+
+export function handleError(error: unknown, {
+  request
+}: LoaderFunctionArgs | ActionFunctionArgs) {
+  if (!request.signal.aborted) {
+    Sentry.captureException(error);
+    console.error(error)
+  }
+}
 
 export default function handleRequest(
   request: Request,
@@ -74,10 +83,6 @@ export default function handleRequest(
           // Log streaming rendering errors from inside the shell.  Don't log
           // errors encountered during initial shell rendering since they'll
           // reject and get logged in handleDocumentRequest.
-          if (!request.signal.aborted) {
-            Sentry.captureException(error);
-          }
-
           if (shellRendered) {
             console.error(error);
           }

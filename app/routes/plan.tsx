@@ -157,17 +157,13 @@ function decodeAndDecompressParams(
 ): Record<string, string> | null {
   let params
 
-  try {
-    params = Buffer.from(encodedParams, 'base64url');
-  } catch (ex) {
-    return null
-  }
+  params = Buffer.from(encodedParams, 'base64url');
 
   const inflate = new Inflate()
   inflate.push(params, true)
 
   if (inflate.err) {
-    return null
+    throw inflate.err
   }
 
   params = Buffer.from(inflate.result).toString('utf-8')
