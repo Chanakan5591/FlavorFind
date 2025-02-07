@@ -13,7 +13,7 @@
  *
  * Copyright 2025 Chanakan Moongthin.
  */
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useEffect, useState, useRef } from "react";
 import {
   Box,
   Card,
@@ -30,6 +30,8 @@ import ReviewStars from "./ReviewStars";
 import { AirVent, Snowflake } from "lucide-react";
 import { useAtomValue } from "jotai";
 import { filtersAtom } from "~/stores";
+import { animateScroll as scroll } from 'react-scroll'
+
 
 // Menu item component
 const MenuItem = React.memo(
@@ -253,6 +255,8 @@ const CanteenItem = React.memo(
   },
 );
 
+const items_per_page = 4
+
 // Cafeteria list component
 const CafeteriaList = React.memo(
   ({
@@ -268,128 +272,170 @@ const CafeteriaList = React.memo(
     onUserRatingChange: (storeId: string, newRating: number) => void;
     clientFingerprint: string;
   }) => {
+    const [currentPage, setCurrentPage] = useState(1)
     const onUserRatingChange = useCallback(onUserRatingChangeProp, []);
     const filters = useAtomValue(filtersAtom);
+
+    const gridRef = useRef(null)
+    // Memoize menu item filtering
+    // Instead of multiple filters:
     const filteredCanteens = useMemo(() => {
-      return canteens
-        .filter((canteen) => {
-          // Filter by selected cafeteria (as before)
-          if (
-            selectedCafeteria.length > 0 &&
-            !selectedCafeteria.includes(canteen.id)
-          ) {
-            return false;
-          }
+      return canteens.reduce((acc, canteen) => {
+        if (
+          selectedCafeteria.length > 0 &&
+          !selectedCafeteria.includes(canteen.id)
+        ) {
+          return acc; // Skip this canteen
+        }
 
-          // Filter by air conditioning preference
-          if (filters.withAircon && !filters.noAircon) {
-            if (!canteen.withAirConditioning) {
+        if (filters.withAircon && !filters.noAircon && !canteen.withAirConditioning) {
+          return acc;
+        }
+
+        if (!filters.withAircon && filters.noAircon && canteen.withAirConditioning) {
+          return acc;
+        }
+
+        // If it passes all canteen filters, then map the stores
+        const stores = canteen.stores.map((store) => {
+          const userRating = store.ratings.find(
+            (rating) => rating.clientFingerprint === clientFingerprint,
+          )?.rating;
+
+          const filteredMenu = store.menu.filter((menu) => {
+            // Price range filter
+            if (menu.price < priceRange[0] || menu.price > priceRange[1]) {
               return false;
             }
-          } else if (!filters.withAircon && filters.noAircon) {
-            if (canteen.withAirConditioning) {
-              return false;
+
+            // Sub-category filter (hardcoded mapping)
+            let includeItem = false; // Flag to track if the item should be included
+
+            if (menu.category === "food") {
+              switch (menu.sub_category) {
+                case "noodles":
+                  includeItem = filters.noodles;
+                  break;
+                case "soup_curry":
+                  includeItem = filters.soup_curry;
+                  break;
+                case "chicken_rice":
+                  includeItem = filters.chicken_rice;
+                  break;
+                case "rice_curry":
+                  includeItem = filters.rice_curry;
+                  break;
+                case "somtum_northeastern":
+                  includeItem = filters.somtum_northeastern;
+                  break;
+                case "steak":
+                  includeItem = filters.steak;
+                  break;
+                case "japanese":
+                  includeItem = filters.japanese;
+                  break;
+                default:
+                  includeItem = filters.others; // If not a specific sub-category, check "others"
+              }
+            } else if (menu.category === "DRINK") {
+              // You can add similar logic for drink sub-categories here
+              // if you want to filter drinks in the future.
+              // For now, we will not filter drinks based on filters except price.
+
+              // The part that currently allow all drinks to be shown on the webpage
+              includeItem = filters.beverage;
+            } else {
+              includeItem = filters.others; // default catch all others if category is not food nor drink
             }
-          }
 
-          return true;
-        })
-        .map((canteen) => ({
-          ...canteen,
-          stores: canteen.stores.map((store) => {
-            const userRating = store.ratings.find(
-              (rating) => rating.clientFingerprint === clientFingerprint,
-            )?.rating;
+            // Check if "others" is selected and the item doesn't match any other filter
+            if (!includeItem && filters.others) {
+              includeItem = true;
+            }
 
-            // Filter menu items based on sub_category and price range
-            const filteredMenu = store.menu.filter((menu) => {
-              // Price range filter
-              if (menu.price < priceRange[0] || menu.price > priceRange[1]) {
-                return false;
-              }
+            // If no specific sub-category filters are active, include the item
+            if (
+              !filters.noodles &&
+              !filters.soup_curry &&
+              !filters.chicken_rice &&
+              !filters.rice_curry &&
+              !filters.somtum_northeastern &&
+              !filters.steak &&
+              !filters.japanese &&
+              !filters.others &&
+              !filters.beverage
+            ) {
+              includeItem = true;
+            }
 
-              // Sub-category filter (hardcoded mapping)
-              let includeItem = false; // Flag to track if the item should be included
+            return includeItem;
+          });
 
-              if (menu.category === "food") {
-                switch (menu.sub_category) {
-                  case "noodles":
-                    includeItem = filters.noodles;
-                    break;
-                  case "soup_curry":
-                    includeItem = filters.soup_curry;
-                    break;
-                  case "chicken_rice":
-                    includeItem = filters.chicken_rice;
-                    break;
-                  case "rice_curry":
-                    includeItem = filters.rice_curry;
-                    break;
-                  case "somtum_northeastern":
-                    includeItem = filters.somtum_northeastern;
-                    break;
-                  case "steak":
-                    includeItem = filters.steak;
-                    break;
-                  case "japanese":
-                    includeItem = filters.japanese;
-                    break;
-                  default:
-                    includeItem = filters.others; // If not a specific sub-category, check "others"
-                }
-              } else if (menu.category === "DRINK") {
-                // You can add similar logic for drink sub-categories here
-                // if you want to filter drinks in the future.
-                // For now, we will not filter drinks based on filters except price.
+          return {
+            ...store,
+            menu: filteredMenu,
+            userStoreRating: userRating ?? 0,
+          };
+        });
 
-                // The part that currently allow all drinks to be shown on the webpage
-                includeItem = filters.beverage;
-              } else {
-                includeItem = filters.others; // default catch all others if category is not food nor drink
-              }
+        return [...acc, { ...canteen, stores: stores }];
+      }, []);
+    }, [canteens, selectedCafeteria, filters, clientFingerprint, priceRange])
 
-              // Check if "others" is selected and the item doesn't match any other filter
-              if (!includeItem && filters.others) {
-                includeItem = true;
-              }
+    useEffect(() => {
+      setCurrentPage(1)
+    }, [filteredCanteens])
 
-              // If no specific sub-category filters are active, include the item
-              if (
-                !filters.noodles &&
-                !filters.soup_curry &&
-                !filters.chicken_rice &&
-                !filters.rice_curry &&
-                !filters.somtum_northeastern &&
-                !filters.steak &&
-                !filters.japanese &&
-                !filters.others &&
-                !filters.beverage
-              ) {
-                includeItem = true;
-              }
+    const startIndex = (currentPage - 1) * items_per_page;
+    const endIndex = startIndex + items_per_page;
 
-              return includeItem;
-            });
+    const canteensForPage = useMemo(
+      () => filteredCanteens.slice(startIndex, endIndex),
+      [filteredCanteens, startIndex, endIndex]
+    );
+    const totalPages = Math.ceil(filteredCanteens.length / items_per_page);
 
-            return {
-              ...store,
-              menu: filteredMenu,
-              userStoreRating: userRating ?? 0,
-            };
-          }),
-        }));
-    }, [canteens, selectedCafeteria, priceRange, clientFingerprint, filters]);
+    const handlePreviousPage = () => {
+      setCurrentPage((prevPage) => Math.max(prevPage - 1, 1)); // Prevent going below page 1
+    };
+
+    const handleNextPage = () => {
+      setCurrentPage((prevPage) => Math.min(prevPage + 1, totalPages)); // Prevent going beyond totalPages
+    };
+
+    useEffect(() => {
+      scroll.scrollToTop()
+    }, [currentPage])
+
 
     return (
-      <Grid gap={4}>
-        {filteredCanteens.map((canteen) => (
-          <CanteenItem
-            key={canteen.id}
-            canteen={canteen}
-            onUserRatingChange={onUserRatingChange}
-          />
-        ))}
-      </Grid>
+      <div>
+        <Grid gap={4}>
+          {canteensForPage.map((canteen) => (
+            <CanteenItem
+              key={canteen.id}
+              canteen={canteen}
+              onUserRatingChange={onUserRatingChange}
+            />
+          ))}
+        </Grid>
+
+        {/* Pagination controls */}
+        <Flex justifyContent="space-between" alignItems='center' mt={4}>
+          <Button onClick={handlePreviousPage} disabled={currentPage === 1}>
+            Previous
+          </Button>
+          <Text>
+            Page {currentPage} of {totalPages}
+          </Text>
+          <Button
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
+        </Flex>
+      </div>
     );
   },
 );

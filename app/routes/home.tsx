@@ -143,7 +143,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   // We create deferred versions of our filtering state so that the interactive
   // controls update immediately while the heavy work (e.g. filtering & re‐rendering
   // the list) happens in the background.
-  const deferredFilters = useDeferredValue(filters);
+  //  const deferredFilters = useDeferredValue(filters);
   const deferredSelectedCanteens = useDeferredValue(selectedCanteens);
   const deferredPriceRange = useDeferredValue(priceRange);
 
@@ -509,10 +509,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 }
                 priceRange={deferredPriceRange}
                 selectedCafeteria={deferredSelectedCanteens}
-                filters={deferredFilters}
+                // filters={deferredFilters}
                 onUserRatingChange={onUserRatingChange}
                 clientFingerprint={clientFingerprint}
-                isUpdating={isPending} // Optionally, LazyCafeteriaList can show its own skeleton/placeholder when isPending is true.
               />
             );
           }}

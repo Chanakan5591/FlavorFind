@@ -21,6 +21,7 @@
     "@sentry/profiling-node": "^8.52.0",
     "@sentry/react": "^8.52.0",
     "@sentry/vite-plugin": "^3.1.1",
+    "@types/react-scroll": "^1.8.10",
     "brotli-wasm": "^3.0.1",
     "express": "^4.21.2",
     "ioredis": "^5.4.1",
@@ -40,6 +41,8 @@
     "react-icons": "^5.4.0",
     "react-iframe": "^1.8.5",
     "react-router": "7.1.2-pre.0",
+    "react-scroll": "^1.9.2",
+    "react-virtualized-auto-sizer": "^1.0.25",
     "react-window": "^1.8.11",
     "remixicon": "^4.5.0"
   },
