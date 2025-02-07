@@ -275,11 +275,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     (details: SliderValueChangeDetails) => {
       const newPriceSlider = [details.value[0], details.value[1]];
       setPriceSliderValue(newPriceSlider);
-      const minPrice = mapPercentageToRange(details.value[0]);
-      const maxPrice = mapPercentageToRange(details.value[1])
-      startTransition(() => {
-        setPriceRange([minPrice, maxPrice]);
-      });
+      try {
+        const minPrice = mapPercentageToRange(details.value[0]);
+        const maxPrice = mapPercentageToRange(details.value[1])
+        startTransition(() => {
+          setPriceRange([minPrice, maxPrice]);
+        });
+      } catch (exc) { }
     },
     []
   );
