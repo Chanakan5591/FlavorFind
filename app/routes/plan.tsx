@@ -139,15 +139,6 @@ function seededRandomPick<T>(array: T[], seed: number): T {
   return array[Math.floor(rng() * array.length)];
 }
 
-function base64urlDecode(base64url: string) {
-  let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
-  while (base64.length % 4) {
-    base64 += '=';
-  }
-  return decodeURIComponent(escape(atob(base64)));
-}
-
-
 /**
  * Decodes and decompresses the encoded parameters from the URL.
  */

@@ -7,7 +7,6 @@ import {
   Slider,
   Flex,
   type SliderValueChangeDetails,
-  Input,
   HStack,
   type NumberInputValueChangeDetails,
   NumberInputRoot,

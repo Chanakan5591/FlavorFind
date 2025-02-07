@@ -18,6 +18,7 @@ import { startTransition, StrictMode, useEffect } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
 import { env } from "./env/client";
+import posthog from "posthog-js";
 
 Sentry.init({
   dsn: env.VITE_SENTRY_DSN,
@@ -32,9 +33,14 @@ Sentry.init({
   integrations: [
     Sentry.browserTracingIntegration(),
     Sentry.replayIntegration(),
+    posthog.sentryIntegration({
+      organization: env.VITE_SENTRY_ORG_SLUG,
+      projectId: parseInt(env.VITE_SENTRY_PROJECT_ID),
+      severityAllowList: ['error', 'info']
+    })
   ],
 
-  replaysSessionSampleRate: 0.1,
+  replaysSessionSampleRate: 0,
   replaysOnErrorSampleRate: 1.0,
 });
 
