@@ -815,6 +815,7 @@ export default function NewPlan({ loaderData }: Route.ComponentProps) {
                   rounded="xl"
                   textAlign="center"
                   border="2px solid gray"
+                  zIndex={2}
                 >
                   <Text color="gray.700">Couldn't find suitable meal</Text>
                 </Box>
