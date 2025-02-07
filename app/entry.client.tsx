@@ -22,6 +22,12 @@ import { env } from "./env/client";
 Sentry.init({
   dsn: env.VITE_SENTRY_DSN,
   tracesSampleRate: 1,
+  beforeSend(event, hint) {
+    if (event.exception && event.event_id) {
+      Sentry.showReportDialog({ eventId: event.event_id });
+    }
+    return event
+  },
 
   integrations: [
     Sentry.browserTracingIntegration(),
