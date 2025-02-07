@@ -31,6 +31,7 @@ import { AirVent, Snowflake } from "lucide-react";
 import { useAtomValue } from "jotai";
 import { filtersAtom } from "~/stores";
 import { animateScroll as scroll } from 'react-scroll'
+import { useFeatureFlagEnabled } from 'posthog-js/react'
 
 
 // Menu item component
@@ -255,7 +256,8 @@ const CanteenItem = React.memo(
   },
 );
 
-const items_per_page = 4
+const DEFAULT_ITEMS_PER_PAGE = 4
+const MAX_MENU_ITEMS_PER_PAGE = 20;
 
 // Cafeteria list component
 const CafeteriaList = React.memo(
@@ -276,7 +278,8 @@ const CafeteriaList = React.memo(
     const onUserRatingChange = useCallback(onUserRatingChangeProp, []);
     const filters = useAtomValue(filtersAtom);
 
-    const gridRef = useRef(null)
+    const doPaginationOnMenuCount = useFeatureFlagEnabled('pagination-based-on-menu-count')
+
     // Memoize menu item filtering
     // Instead of multiple filters:
     const filteredCanteens = useMemo(() => {
@@ -386,14 +389,61 @@ const CafeteriaList = React.memo(
       setCurrentPage(1)
     }, [filteredCanteens])
 
+    let items_per_page = DEFAULT_ITEMS_PER_PAGE;
+
     const startIndex = (currentPage - 1) * items_per_page;
     const endIndex = startIndex + items_per_page;
 
-    const canteensForPage = useMemo(
-      () => filteredCanteens.slice(startIndex, endIndex),
-      [filteredCanteens, startIndex, endIndex]
-    );
-    const totalPages = Math.ceil(filteredCanteens.length / items_per_page);
+    const [canteensForPage, totalPages] = useMemo(() => {
+      if (doPaginationOnMenuCount) {
+        // Calculate canteens per page based on menu item count
+        let currentPageCanteens: CanteenWithStores[] = [];
+        let currentMenuItemCount = 0;
+        let startIndex = (currentPage - 1) * DEFAULT_ITEMS_PER_PAGE; // Start with a base number of canteens
+        let maxCanteens = filteredCanteens.length;
+        items_per_page = DEFAULT_ITEMS_PER_PAGE;
+
+        for (
+          let i = startIndex;
+          i < maxCanteens && currentMenuItemCount <= MAX_MENU_ITEMS_PER_PAGE;
+          i++
+        ) {
+          const canteen = filteredCanteens[i];
+          const totalMenuItems = canteen.stores.reduce(
+            (sum, store) => sum + store.menu.length,
+            0,
+          );
+
+          if (currentMenuItemCount + totalMenuItems <= MAX_MENU_ITEMS_PER_PAGE) {
+            currentPageCanteens.push(canteen);
+            currentMenuItemCount += totalMenuItems;
+            items_per_page++;
+          } else {
+            // If adding this canteen exceeds the limit, break the loop
+            break;
+          }
+        }
+
+        // Recalculate items_per_page based on actual number of displayed items
+        items_per_page = currentPageCanteens.length;
+
+        // Calculate total pages
+        const totalCanteens = filteredCanteens.length;
+        const totalPages = Math.ceil(totalCanteens / items_per_page);
+        return [currentPageCanteens, totalPages];
+      } else {
+        // Original pagination logic
+
+        const startIndex = (currentPage - 1) * DEFAULT_ITEMS_PER_PAGE;
+        const endIndex = startIndex + DEFAULT_ITEMS_PER_PAGE;
+        const canteensForPage = filteredCanteens.slice(startIndex, endIndex);
+        const totalPages = Math.ceil(
+          filteredCanteens.length / DEFAULT_ITEMS_PER_PAGE,
+        );
+        items_per_page = DEFAULT_ITEMS_PER_PAGE; // Reset item page
+        return [canteensForPage, totalPages];
+      }
+    }, [filteredCanteens, currentPage, doPaginationOnMenuCount]);
 
     const handlePreviousPage = () => {
       setCurrentPage((prevPage) => Math.max(prevPage - 1, 1)); // Prevent going below page 1
