@@ -6,6 +6,7 @@ export const env = createEnv({
     DATABASE_URL: z.string().url(),
     HMAC_SECRET_KEY: z.string(),
     REDIS_URL: z.string().url().startsWith("rediss://"),
+    SENTRY_AUTH_TOKEN: z.string()
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

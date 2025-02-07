@@ -2,16 +2,18 @@ import { reactRouter } from "@react-router/dev/vite";
 import autoprefixer from "autoprefixer";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 
 export default defineConfig(({ isSsrBuild, command }) => ({
   optimizeDeps: {
     exclude: ["brotli-wasm", "brotli-wasm/pkg.bundler/brotli_wasm_bg.wasm"],
   },
   build: {
+    sourcemap: true,
     rollupOptions: isSsrBuild
       ? {
-          input: "./server/app.ts",
-        }
+        input: "./server/app.ts",
+      }
       : undefined,
   },
   css: {
@@ -42,6 +44,15 @@ export default defineConfig(({ isSsrBuild, command }) => ({
         }
       },
     },
+    sentryVitePlugin({
+      org: "chanakan-mungtin",
+      project: "flavorfind",
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      telemetry: false,
+      sourcemaps: {
+        filesToDeleteAfterUpload: '*.js.map'
+      }
+    })
   ],
   resolve: {
     alias: {

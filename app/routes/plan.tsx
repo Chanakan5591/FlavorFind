@@ -157,16 +157,25 @@ function decodeAndDecompressParams(
 ): Record<string, string> | null {
   let params
 
-  params = Buffer.from(encodedParams, 'base64url');
+  try {
+    params = Buffer.from(encodedParams, 'base64url');
+  } catch (ex) {
+    return null
+  }
 
   const inflate = new Inflate()
   inflate.push(params, true)
 
   if (inflate.err) {
-    throw inflate.err
+    return null
   }
 
-  params = Buffer.from(inflate.result).toString('utf-8')
+  try {
+    params = Buffer.from(inflate.result).toString('utf-8')
+  } catch (exc) {
+    // maybe send this to sentry if it can caused problem to legitimate users
+    return null
+  }
 
   let decodedParams
   try {
