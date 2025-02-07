@@ -7,6 +7,11 @@ import {
   Slider,
   Flex,
   type SliderValueChangeDetails,
+  Input,
+  HStack,
+  type NumberInputValueChangeDetails,
+  NumberInputRoot,
+  type NumberInputFocusChangeDetails,
 } from "@chakra-ui/react";
 import type { Route } from "./+types/home";
 import prisma from "~/db.server";
@@ -37,6 +42,7 @@ import { rateLimiterService } from "~/util/ratelimit.server";
 import { useAtom } from "jotai";
 import { Checkbox } from "~/components/ui/checkbox";
 import { selectedCanteensAtom, priceRangeAtom, filtersAtom } from "~/stores";
+import { NumberInputField } from "~/components/ui/number-input";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -233,6 +239,20 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     });
   };
 
+  function mapRangeToPercentage(rangeValue: number): number {
+    const minRange = 5;
+    const maxRange = 150;
+
+    if (rangeValue < minRange || rangeValue > maxRange) {
+      throw new Error("Range value must be between 5 and 150");
+    }
+
+    const rangeDifference = maxRange - minRange;
+    const percentage = ((rangeValue - minRange) / rangeDifference) * 100;
+
+    return Math.round(percentage); // Round for consistency with the original function
+  }
+
   function mapPercentageToRange(percentage: number) {
     if (percentage < 0 || percentage > 100) {
       throw new Error("Percentage must be between 0 and 100");
@@ -261,18 +281,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         setPriceRange([minPrice, maxPrice]);
       });
     },
-    [setPriceRange, startTransition]
-  );
-
-  // For checkboxes and select, we update the immediate state and then update
-  // the applied state (filters, selectedCanteens) in a transition.
-  const handleCafeteriaChange = useCallback(
-    (value: string[]) => {
-      startTransition(() => {
-        setSelectedCanteens(value);
-      });
-    },
-    [setSelectedCanteens, startTransition]
+    []
   );
 
   // Initialize the select collection once we have canteens data
@@ -292,6 +301,24 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     onValueChange: handlePriceRangeChange,
     //    onValueChangeEnd: handleSliderMouseUp
   })
+
+  const handlePriceMinManualInput = (details: NumberInputValueChangeDetails) => {
+    let value = details.valueAsNumber
+
+    if (isNaN(value)) value = 0
+    setPriceRange([value, priceRange[1]])
+    priceSlider.setValue([mapRangeToPercentage(value), priceSlider.value[1]])
+  }
+
+  const handlePriceMaxManualInput = (details: NumberInputValueChangeDetails) => {
+    let value = details.valueAsNumber
+
+    if (isNaN(value)) value = 0
+    setPriceRange([priceRange[0], value])
+    priceSlider.setValue([priceSlider.value[0], mapRangeToPercentage(value)])
+  }
+
+  console.log(priceRange)
 
   return (
     <Box padding={8} colorPalette="brand">
@@ -333,15 +360,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               <Skeleton height="100%" width="100%" />
             )}
           </Box>
-          <Box width="full">
+
+          <HStack width="full" alignItems='center'>
             <Slider.RootProvider value={priceSlider} width="full">
               <Slider.Label
-                style={{ display: "flex", justifyContent: "space-between" }}
+                style={{ display: "flex", justifyContent: "space-between", alignItems: 'center' }}
               >
                 <span>Price range for each items</span>
-                <span>
-                  ฿{priceRange[0]} - ฿{priceRange[1]}
-                </span>
+
               </Slider.Label>
               <Slider.Control>
                 <Slider.Track>
@@ -355,7 +381,27 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 </Slider.Thumb>
               </Slider.Control>
             </Slider.RootProvider>
-          </Box>
+          </HStack>
+          <HStack>
+            <NumberInputRoot
+              min={5}
+              max={150}
+              value={priceRange[0].toString()}
+              onValueChange={handlePriceMinManualInput}
+            >
+              <NumberInputField />
+            </NumberInputRoot>
+            <NumberInputRoot
+              min={50}
+              max={150}
+              value={priceRange[1].toString()}
+              onValueChange={handlePriceMaxManualInput}
+            >
+              <NumberInputField />
+            </NumberInputRoot>
+
+          </HStack>
+
         </Stack>
         <Flex
           gap={4}
