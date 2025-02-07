@@ -17,9 +17,10 @@ import * as Sentry from "@sentry/react";
 import { startTransition, StrictMode, useEffect } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
+import { env } from "./env/client";
 
 Sentry.init({
-  dsn: "https://5b08660faae9b1be3cd21a9c36c3f618@o4504890693910528.ingest.us.sentry.io/4508726746480640",
+  dsn: env.VITE_SENTRY_DSN,
   tracesSampleRate: 1,
 
   integrations: [

@@ -25,14 +25,12 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
-import { Provider } from "~/components/ui/provider";
-import { ColorModeProvider } from "./components/ui/color-mode";
 import "remixicon/fonts/remixicon.css";
 import Navbar from "./components/navbar";
 
 import "./global.css";
 
-import { Box, ChakraProvider, VStack } from "@chakra-ui/react";
+import { Box, ChakraProvider } from "@chakra-ui/react";
 import { Toaster } from "./components/ui/toaster";
 import PostHogPageView from "./util/pageview";
 import { system } from "theme";
