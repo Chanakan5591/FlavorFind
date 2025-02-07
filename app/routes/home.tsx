@@ -366,7 +366,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               <Slider.Label
                 style={{ display: "flex", justifyContent: "space-between", alignItems: 'center' }}
               >
-                <span>Price range for each items</span>
+                <span>Price range for each items (฿)</span>
 
               </Slider.Label>
               <Slider.Control>
