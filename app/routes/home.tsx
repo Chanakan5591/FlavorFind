@@ -273,10 +273,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   // actual priceRange in a transition so that the heavy filtering work is deferred.
   const handlePriceRangeChange = useCallback(
     (details: SliderValueChangeDetails) => {
-      const newPriceSlider = [details.value[0], Math.max(details.value[1], 31)];
+      const newPriceSlider = [details.value[0], details.value[1]];
       setPriceSliderValue(newPriceSlider);
       const minPrice = mapPercentageToRange(details.value[0]);
-      const maxPrice = Math.max(mapPercentageToRange(details.value[1]), 50);
+      const maxPrice = mapPercentageToRange(details.value[1])
       startTransition(() => {
         setPriceRange([minPrice, maxPrice]);
       });
@@ -307,6 +307,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
     if (isNaN(value)) value = 0
     setPriceRange([value, priceRange[1]])
+
+  }
+
+  const handlePriceMinOutOfFocus = (details: NumberInputFocusChangeDetails) => {
+    let value = details.valueAsNumber
+    if (isNaN(value)) value = 0
+
     priceSlider.setValue([mapRangeToPercentage(value), priceSlider.value[1]])
   }
 
@@ -315,10 +322,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
     if (isNaN(value)) value = 0
     setPriceRange([priceRange[0], value])
-    priceSlider.setValue([priceSlider.value[0], mapRangeToPercentage(value)])
   }
 
-  console.log(priceRange)
+  const handlePriceMaxOutOfFocus = (details: NumberInputFocusChangeDetails) => {
+    let value = details.valueAsNumber
+
+    if (isNaN(value)) value = 0
+    priceSlider.setValue([priceSlider.value[0], mapRangeToPercentage(value)])
+  }
 
   return (
     <Box padding={8} colorPalette="brand">
@@ -388,14 +399,16 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               max={150}
               value={priceRange[0].toString()}
               onValueChange={handlePriceMinManualInput}
+              onFocusChange={handlePriceMinOutOfFocus}
             >
               <NumberInputField />
             </NumberInputRoot>
             <NumberInputRoot
-              min={50}
+              min={0}
               max={150}
               value={priceRange[1].toString()}
               onValueChange={handlePriceMaxManualInput}
+              onFocusChange={handlePriceMaxOutOfFocus}
             >
               <NumberInputField />
             </NumberInputRoot>
