@@ -31,7 +31,7 @@ import { AirVent, Snowflake } from "lucide-react";
 import { useAtomValue } from "jotai";
 import { filtersAtom } from "~/stores";
 import { animateScroll as scroll } from 'react-scroll'
-import { useFeatureFlagEnabled } from 'posthog-js/react'
+import { useFeatureFlagEnabled, useFeatureFlagVariantKey } from 'posthog-js/react'
 
 
 // Menu item component
@@ -207,9 +207,9 @@ const CanteenItem = React.memo(
     canteen: Omit<CanteenWithStores, "stores"> & { stores };
     onUserRatingChange: (storeId: string, newRating: number) => void;
   }) => {
-    const doCardTakeFreeSpace = useFeatureFlagEnabled('card-take-up-free-space')
+    const cardLayoutVariant = useFeatureFlagVariantKey('card-take-up-free-space')
     const gridTemplateColumns = useMemo(() => {
-      if (doCardTakeFreeSpace) {
+      if (cardLayoutVariant === 'responsive') {
         return {
           base: "1fr",
           md: "repeat(auto-fit, minmax(300px, 1fr))", // Adjust minmax value as needed
@@ -221,7 +221,7 @@ const CanteenItem = React.memo(
           xl: "repeat(3, 1fr)",
         };
       }
-    }, [doCardTakeFreeSpace]);
+    }, [cardLayoutVariant]);
 
 
     return (
