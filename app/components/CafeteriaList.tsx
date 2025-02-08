@@ -27,7 +27,7 @@ import {
 import type { CanteenWithStores } from "~/types";
 import { Button } from "./ui/button";
 import ReviewStars from "./ReviewStars";
-import { AirVent, Snowflake } from "lucide-react";
+import { AirVent, ArrowBigLeft, ArrowBigRight, Snowflake } from "lucide-react";
 import { useAtom, useAtomValue } from "jotai";
 import { cafeteriaListCurrentPage, clientHMACFingerprintAtom, filtersAtom } from "~/stores";
 import { animateScroll as scroll } from 'react-scroll'
@@ -279,63 +279,88 @@ const CanteenItem = React.memo(
   },
 );
 
-
-const Pagination = ({
-  currentPage,
-  totalPages,
-  onPageChange,
-}: {
+interface PaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-}) => {
+}
+
+const Pagination = ({ currentPage, totalPages, onPageChange }: PaginationProps) => {
+  const [visiblePageCount, setVisiblePageCount] = useState(3); // Default to 3 (mobile)
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 500) { // Adjust 768 to your desired breakpoint
+        if (visiblePageCount != 5)
+          setVisiblePageCount(5);
+      } else {
+        if (visiblePageCount != 3)
+          setVisiblePageCount(3);
+      }
+    };
+
+    // Initial check on mount
+    handleResize();
+
+    // Listen for window resize events
+    window.addEventListener('resize', handleResize);
+
+    // Clean up the event listener on unmount
+    return () => window.removeEventListener('resize', handleResize);
+  }, []); // Empty dependency array: run only on mount and unmount
+
   const pageNumbers = useMemo(() => {
     const pages: (number | '...')[] = [];
-    const visiblePageCount = 5; // Adjust for how many page numbers to show
 
     if (totalPages <= visiblePageCount) {
-      // Show all page numbers if totalPages is less than or equal to visiblePageCount
+      // If there are only a few pages, show them all.
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
     } else {
-      // Add first page
+      // Reserve two slots for the first and last pages.
+      const windowSize = visiblePageCount - 2;
+      const halfWindow = Math.floor(windowSize / 2);
+
+      // Determine the window boundaries centered on currentPage.
+      let startPage = currentPage - halfWindow;
+      let endPage = currentPage + halfWindow;
+
+      // If currentPage is near the start, adjust the window to the right.
+      if (startPage < 2) {
+        startPage = 2;
+        endPage = startPage + windowSize - 1;
+      }
+
+      // If currentPage is near the end, adjust the window to the left.
+      if (endPage > totalPages - 1) {
+        endPage = totalPages - 1;
+        startPage = endPage - windowSize + 1;
+      }
+
+      // Always show the first page.
       pages.push(1);
 
-      // Add ellipsis if needed
-      if (currentPage > 3) {
+      // Add an ellipsis if there's a gap between page 1 and the window.
+      if (startPage > 2) {
         pages.push('...');
       }
 
-      // Add current page and neighbors
-      let startPage = Math.max(currentPage - 1, 2);
-      let endPage = Math.min(currentPage + 1, totalPages - 1);
-
-      // Adjust start and end if they are too close to the beginning or end
-      if (endPage - startPage < 2) {
-        if (currentPage < totalPages - 1) {
-          endPage = Math.min(endPage + (2 - (endPage - startPage)), totalPages - 1);
-        } else {
-          startPage = Math.max(startPage - (2 - (endPage - startPage)), 2);
-        }
-      }
-
-
+      // Add the pages in the window.
       for (let i = startPage; i <= endPage; i++) {
         pages.push(i);
       }
 
-      // Add ellipsis if needed
-      if (currentPage < totalPages - 2) {
+      // Add an ellipsis if there's a gap between the window and the last page.
+      if (endPage < totalPages - 1) {
         pages.push('...');
       }
 
-      // Add last page
+      // Always show the last page.
       pages.push(totalPages);
     }
-
     return pages;
-  }, [currentPage, totalPages]);
+  }, [currentPage, totalPages, visiblePageCount]);
 
   return (
     <Flex justifyContent="space-between" alignItems="center" mt={4}>
@@ -343,14 +368,14 @@ const Pagination = ({
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
       >
-        Previous
+        <ArrowBigLeft />
       </Button>
 
       <Flex>
         {pageNumbers.map((page, index) => (
           <Button
             key={index}
-            onClick={() => typeof page === 'number' ? onPageChange(page) : undefined}
+            onClick={() => typeof page === 'number' && onPageChange(page)}
             disabled={typeof page !== 'number'}
             colorScheme={typeof page === 'number' && page === currentPage ? 'blue' : undefined}
             variant={typeof page === 'number' && page === currentPage ? 'solid' : 'ghost'}
@@ -364,7 +389,7 @@ const Pagination = ({
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
       >
-        Next
+        <ArrowBigRight />
       </Button>
     </Flex>
   );
@@ -395,7 +420,8 @@ const CafeteriaList = React.memo(
     const clientHMACFingerprint = useAtomValue(clientHMACFingerprintAtom);
     const clientFingerprint = clientHMACFingerprint.split(":")[0];
 
-    const doPaginationOnMenuCount = useFeatureFlagEnabled('pagination-based-on-menu-count')
+    //    const doPaginationOnMenuCount = useFeatureFlagEnabled('pagination-based-on-menu-count')
+    const doPaginationOnMenuCount = true
 
     /**
      * 1. Filter and transform canteens  
