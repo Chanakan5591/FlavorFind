@@ -15,16 +15,15 @@
  */
 import prisma from "~/db.server";
 
-function timeToMinutes(timeStr) {
-  if (!timeStr) return null;
+function timeToMinutes(timeStr: string) {
   const [hours, minutes] = timeStr.split(":").map(Number);
   return hours * 60 + minutes;
 }
 
 function isMealWithinOpeningHours(
-  mealTimeMinutes,
-  openingTimeMinutes,
-  closingTimeMinutes,
+  mealTimeMinutes: number,
+  openingTimeMinutes: number,
+  closingTimeMinutes: number,
 ) {
   if (mealTimeMinutes === null) return true;
 

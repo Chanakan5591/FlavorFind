@@ -46,8 +46,8 @@ class RateLimiter {
   ): Promise<boolean> {
     // Check fingerprint token bucket
     const fingerprintKey = `token_bucket:FP:${userFingerprint}`;
-    let tokensFP = await redis.get(fingerprintKey);
-    let lastRefillFP = await redis.get(`${fingerprintKey}:last_refill`);
+    const tokensFP = await redis.get(fingerprintKey);
+    const lastRefillFP = await redis.get(`${fingerprintKey}:last_refill`);
 
     // For first-time visitors, initialize with max capacity and return true immediately
     if (!tokensFP) {
@@ -84,8 +84,8 @@ class RateLimiter {
 
     // Check IP token bucket
     const ipKey = `token_bucket:IP:${clientIP}`;
-    let tokensIP = await redis.get(ipKey);
-    let lastRefillIP = await redis.get(`${ipKey}:last_refill`);
+    const tokensIP = await redis.get(ipKey);
+    const lastRefillIP = await redis.get(`${ipKey}:last_refill`);
 
     // For first-time IP, initialize with max capacity and return true immediately
     if (!tokensIP) {
@@ -126,8 +126,8 @@ class RateLimiter {
   // Also fixing the leaky bucket limiter
   public async leakyBucketLimiter(clientIP: string): Promise<boolean> {
     const leakyBucketKey = `leaky_bucket:IP:${clientIP}`;
-    let currentWaterLevel = await this.redis.get(leakyBucketKey);
-    let lastLeak = await this.redis.get(`${leakyBucketKey}:last_leak`);
+    const currentWaterLevel = await this.redis.get(leakyBucketKey);
+    const lastLeak = await this.redis.get(`${leakyBucketKey}:last_leak`);
 
     if (!currentWaterLevel) {
       // Initialize leaky bucket with 0 for first-time visitors

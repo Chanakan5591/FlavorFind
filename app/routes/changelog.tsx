@@ -7,7 +7,7 @@ export default function Survey() {
         display: 'flex',
         height: '100%',
         width: '100%'
-      }} src="https://docs.google.com/forms/d/e/1FAIpQLSejkgrQWis7ejAMFd2PZwDiquqy2c8VBfIHr1f29fwUKZK4Ew/viewform?embedded=true" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+      }} src="https://docs.google.com/forms/d/e/1FAIpQLSejkgrQWis7ejAMFd2PZwDiquqy2c8VBfIHr1f29fwUKZK4Ew/viewform?embedded=true" frameBorder="0" marginHeight="0" marginWidth="0">Loading…</iframe>
     </VStack>
   )
 }

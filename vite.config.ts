@@ -3,6 +3,11 @@ import autoprefixer from "autoprefixer";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { sentryVitePlugin } from '@sentry/vite-plugin'
+import babel from 'vite-plugin-babel'
+
+const ReactCompilerConfig = {
+  target: '19' // '17' | '18' | '19'
+};
 
 export default defineConfig(({ isSsrBuild, command }) => ({
   optimizeDeps: {
@@ -27,6 +32,15 @@ export default defineConfig(({ isSsrBuild, command }) => ({
   plugins: [
     reactRouter(),
     tsconfigPaths(),
+    babel({
+      filter: /\.[jt]sx?$/,
+      babelConfig: {
+        presets: ["@babel/preset-typescript"],
+        plugins: [
+          ["babel-plugin-react-compiler", ReactCompilerConfig]
+        ]
+      }
+    }),
     {
       name: "prisma:build",
       apply: "build",

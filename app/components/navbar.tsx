@@ -25,7 +25,7 @@ export default function Navbar() {
       {/* Centered Logo */}
       <Flex h={16} w="full" justifyContent="space-between" alignItems="center">
         <Button visibility='hidden' disabled>Take Survey</Button>
-        <Link to="/" onClick={(_) => setCafeteriaListCurrentPage(1)}>
+        <Link to="/" onClick={(_) => { setCafeteriaListCurrentPage(1); }}>
           <Box
             fontWeight="bold"
             fontSize="xl"

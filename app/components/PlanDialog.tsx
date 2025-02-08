@@ -59,13 +59,13 @@ import { useCookies } from "react-cookie";
 import { useId } from "react";
 import { deflate } from "pako";
 
-type Inputs = {
-  meals: Array<{
+interface Inputs {
+  meals: {
     date: string;
     time: string;
-  }>;
+  }[];
   withBeverage: boolean;
-};
+}
 
 export default function PlanDialog() {
   const [withBeverage, setWithBeverage] = useState(true);
@@ -146,13 +146,13 @@ export default function PlanDialog() {
               }
             },
           );
-          acc["mD"] = "";
-          acc["mT"] = "";
+          acc.mD = "";
+          acc.mT = "";
           if (mealsDate.length > 0) {
-            acc["mD"] = `'${mealsDate.join("|")}'`;
+            acc.mD = `'${mealsDate.join("|")}'`;
           }
           if (mealsTime.length > 0) {
-            acc["mT"] = `'${mealsTime.join("|")}'`;
+            acc.mT = `'${mealsTime.join("|")}'`;
           }
         } else {
           acc[newKey] = processedValue;
@@ -173,7 +173,7 @@ export default function PlanDialog() {
     console.log(encodedParam)
 
     posthog.capture("user_planned_meal", {
-      client: cookies["nomnom"],
+      client: cookies.nomnom,
       param: encodedParam,
     });
 
@@ -198,7 +198,7 @@ export default function PlanDialog() {
   };
   const userClickedPlan = () => {
     posthog.capture("user_clicked_plan", {
-      client: cookies["nomnom"],
+      client: cookies.nomnom,
     });
   };
 
@@ -307,7 +307,7 @@ export default function PlanDialog() {
             <Switch
               colorPalette="brand.solid"
               checked={withBeverage}
-              onCheckedChange={(e) => setWithBeverage(e.checked)}
+              onCheckedChange={(e) => { setWithBeverage(e.checked); }}
               {...register("withBeverage")}
             >
               With Beverage

@@ -19,7 +19,7 @@ import type { Route } from "./+types/new_fingerprint";
 export async function action({
     request
 }: Route.ActionArgs) {
-    let formData = await request.formData()
+    const formData = await request.formData()
     let fingerprint = formData.get("fingerprint")
 
     fingerprint = fingerprint as string

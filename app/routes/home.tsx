@@ -76,10 +76,10 @@ const LazyCafeteriaList = React.lazy(() => import("~/components/CafeteriaList"))
 const LazyPlanDialog = React.lazy(() => import("~/components/PlanDialog"))
 
 export async function action({ request }: Route.ActionArgs) {
-  let formData = await request.formData();
-  let storeId = formData.get("storeId");
-  let newUserRating = formData.get("newRating");
-  let hmac = formData.get("hmac") as string;
+  const formData = await request.formData();
+  const storeId = formData.get("storeId");
+  const newUserRating = formData.get("newRating");
+  const hmac = formData.get("hmac") as string;
 
   const clientIP = getClientIPAddress(request);
   const fingerprint = hmac.split(":")[0];
@@ -185,7 +185,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         if (!ratingFetcher.data.ok) {
           return;
         }
-        const updatedStore = ratingFetcher.data.new_store as any;
+        const updatedStore = ratingFetcher.data.new_store;
 
         setLocalCanteens((prevCanteens) =>
           prevCanteens.map((canteen) => {

@@ -30,7 +30,6 @@ import {
   Grid,
   HStack,
   Progress,
-  Stack,
   Text,
   VStack,
 } from "@chakra-ui/react";
@@ -150,7 +149,7 @@ function decodeAndDecompressParams(
 
   try {
     params = Buffer.from(encodedParams, 'base64url');
-  } catch (ex) {
+  } catch (_) {
     return null
   }
 
@@ -163,7 +162,7 @@ function decodeAndDecompressParams(
 
   try {
     params = Buffer.from(inflate.result).toString('utf-8')
-  } catch (exc) {
+  } catch (_) {
     // maybe send this to sentry if it can caused problem to legitimate users
     return null
   }
@@ -171,16 +170,16 @@ function decodeAndDecompressParams(
   let decodedParams
   try {
     decodedParams = params.split(";");
-  } catch (ex) { return null }
+  } catch (_) { return null }
 
-  return decodedParams.reduce(
+  return decodedParams.reduce<Record<string, string>>(
     (acc, param) => {
       const [key, value] = param.split("=");
       const realKey = mappings[key as keyof typeof mappings];
       acc[realKey] = value;
       return acc;
     },
-    {} as Record<string, string>,
+    {},
   );
 }
 
@@ -191,8 +190,8 @@ function extractMealDateTime(
   data: Record<string, string>,
   mealsPlanningAmount: number,
 ) {
-  const mealsDateStr = data.mealsDate?.replaceAll("'", "");
-  const mealsTimeStr = data.mealsTime?.replaceAll("'", "");
+  const mealsDateStr = data.mealsDate.replaceAll("'", "");
+  const mealsTimeStr = data.mealsTime.replaceAll("'", "");
 
   const mealsDate = mealsDateStr ? mealsDateStr.split("|") : [];
   const mealsTime = mealsTimeStr ? mealsTimeStr.split("|") : [];
@@ -266,8 +265,8 @@ async function filterAndShuffleCanteens(
             some: {
               category: { not: "DRINK" }, // Only food items are considered for canteen filtering.
               price: {
-                gte: priceRange ? priceRange[0] : undefined,
-                lte: priceRange ? priceRange[1] : undefined,
+                gte: priceRange[0],
+                lte: priceRange[1],
               },
             },
           },
@@ -319,8 +318,8 @@ function selectRandomStores(
   planId: string,
 ) {
   const selectedStores: SpecificStoreWithMeal[] = [];
-  const usedFoodStores: Set<string> = new Set();
-  const usedDrinkStores: Set<string> = new Set();
+  const usedFoodStores = new Set<string>();
+  const usedDrinkStores = new Set<string>();
 
   for (const mealStore of mealsStores) {
     const { meal: mealInfo, foodStores, drinkStores } = mealStore;
@@ -332,12 +331,11 @@ function selectRandomStores(
     let pickedFoodStore: stores | undefined;
     do {
       const foodStoreSpecificSeed = stringToHash(
-        planId + mealInfo.mealNumber + foodStoreSeedOffset,
+        planId + mealInfo.mealNumber + foodStoreSeedOffset.toString(),
       );
-      pickedFoodStore = seededRandomPick(foodStores, foodStoreSpecificSeed)!;
+      pickedFoodStore = seededRandomPick(foodStores, foodStoreSpecificSeed);
       foodStoreSeedOffset++;
     } while (
-      pickedFoodStore &&
       usedFoodStores.has(pickedFoodStore.id) &&
       foodStoreSeedOffset < foodStores.length + 1
     );
@@ -406,7 +404,7 @@ function pickMealAndDrink(
   let drinkEntry: StoresMenu | undefined;
   if (withBeverage && drinkOptions.length > 0) {
     let drinkSeedOffset = 0;
-    let drinkOptionsToUse = [...drinkOptions]; // Create a mutable copy
+    const drinkOptionsToUse = [...drinkOptions]; // Create a mutable copy
 
     while (!drinkEntry && drinkOptionsToUse.length > 0) {
       if (usedDrinks.size >= drinkOptionsToUse.length) {
@@ -457,7 +455,7 @@ function pickMealAndDrink(
 
   let pickedFood: StoresMenu | undefined;
   let mealSeedOffset = 0;
-  let filteredMenuToUse = [...filteredMenu];
+  const filteredMenuToUse = [...filteredMenu];
 
   while (!pickedFood && filteredMenuToUse.length > 0) {
     if (usedMeals.size >= filteredMenuToUse.length) {
@@ -534,7 +532,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   const selectedCanteens = data.selectedCanteens.split(",");
   const mealsPlanningAmount = Number(data.mealsPlanningAmount);
   const withBeverage = data.withBeverage === "1";
-  let totalPlannedBudgets = Number(data.totalPlannedBudgets);
+  const totalPlannedBudgets = Number(data.totalPlannedBudgets);
 
   const meals = extractMealDateTime(data, mealsPlanningAmount);
 
@@ -580,7 +578,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
   console.log(selectedStoresForEachMeal)
 
-  let selectedStoresForEachMealFiltered: SpecificStoreWithMeal[] = []
+  const selectedStoresForEachMealFiltered: SpecificStoreWithMeal[] = []
   let haveFood = false;
 
   for (const mealstore of selectedStoresForEachMeal) {
@@ -607,8 +605,8 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     mealStore.canteenName = canteen?.name;
   });
 
-  const usedMeals: Set<string> = new Set();
-  const usedDrinks: Set<string> = new Set();
+  const usedMeals = new Set<string>();
+  const usedDrinks = new Set<string>();
 
   // Build the deterministic menu plan as before
   const selectedMenu = selectedStoresForEachMeal.map((mealStore) => {
@@ -671,7 +669,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   // Calculate total cost for the deterministic plan (food + drink prices)
   const deterministicTotal = selectedMenu.reduce((sum, meal) => {
     return (
-      sum + (meal.pickedMeal && meal.pickedMeal.price ? meal.pickedMeal.price : 0 + (meal.drinkMenu && meal.drinkMenu.price ? meal.drinkMenu.price : 0))
+      sum + (meal.pickedMeal?.price ? meal.pickedMeal.price : 0 + (meal.drinkMenu?.price ? meal.drinkMenu.price : 0))
     );
   }, 0);
 
@@ -816,7 +814,7 @@ export default function NewPlan({ loaderData }: Route.ComponentProps) {
         >
           {selectedMenu && selectedMenu.length != 0 ? (
             <>
-              {selectedMenu!.map((meal) => (
+              {selectedMenu.map((meal) => (
                 <Box key={meal.meal.mealNumber}>
                   {meal.pickedMeal ? (
                     <Box

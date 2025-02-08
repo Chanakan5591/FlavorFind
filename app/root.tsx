@@ -91,7 +91,7 @@ function reportToSentry(error: unknown) {
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let stack: string | undefined;
   let message = "We have a problem :("
-  let runtimeError: boolean = false;
+  let runtimeError = false;
 
   if (import.meta.env.DEV) {
     message = "🔥 Chanakan come fix this 🔥"
@@ -99,7 +99,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 
   let sentid: string | undefined;
   //sentid = 'gh'
-  let is404: boolean = false;
+  let is404 = false;
 
   if (error != null) {
     if (isRouteErrorResponse(error)) {
@@ -107,7 +107,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
         is404 = true;
         message = "We tried to find what you want, but it's just not there."
       }
-      if (error.status.toString()[0] != '4') {
+      if (!error.status.toString().startsWith('4')) {
         runtimeError = true
         sentid = reportToSentry(error)
       }

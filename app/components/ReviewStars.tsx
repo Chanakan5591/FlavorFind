@@ -16,12 +16,12 @@
 import { useEffect, useState } from "react";
 import type { MouseEvent } from "react";
 
-type Props = {
+interface Props {
   averageRating: number; // Average rating for the store
   userRating: number; // Initial user rating
   storeId: string; // Store identifier
   onRatingChange: (newRating: number) => void; // Callback when user's rating changes
-};
+}
 
 export default function ReviewStars({
   averageRating,
@@ -49,7 +49,7 @@ export default function ReviewStars({
     setHoveredRating(index + (isHalf ? 0.5 : 1));
   };
 
-  const handleMouseLeave = () => setHoveredRating(null);
+  const handleMouseLeave = () => { setHoveredRating(null); };
 
   const handleClick = (rating: number) => {
     setSelectedUserRating(rating);
@@ -105,8 +105,8 @@ export default function ReviewStars({
               key={`user-${index}`}
               className={`star ${isFull ? "ri-star-fill user-star" : isHalf ? "ri-star-half-line user-star" : "ri-star-line user-star"}`}
               style={{ cursor: "pointer" }}
-              onMouseMove={(event) => handleMouseMove(event, index)}
-              onClick={() => handleClick(starIndex - (isHalf ? 0.5 : 0))}
+              onMouseMove={(event) => { handleMouseMove(event, index); }}
+              onClick={() => { handleClick(starIndex - (isHalf ? 0.5 : 0)); }}
             ></i>
           );
         })}

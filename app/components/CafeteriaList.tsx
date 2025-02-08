@@ -48,7 +48,7 @@ const MenuItem = React.memo(
 
 // Menu list component
 const MenuList = React.memo(
-  ({ menu }: { menu: Array<{ name: string; price: number }> }) => {
+  ({ menu }: { menu: { name: string; price: number }[] }) => {
     return menu.length > 0 ? (
       <Box>
         {menu.map((item, index) => (
@@ -306,7 +306,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }: PaginationProps) 
     window.addEventListener('resize', handleResize);
 
     // Clean up the event listener on unmount
-    return () => window.removeEventListener('resize', handleResize);
+    return () => { window.removeEventListener('resize', handleResize); };
   }, []); // Empty dependency array: run only on mount and unmount
 
   const pageNumbers = useMemo(() => {
@@ -365,7 +365,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }: PaginationProps) 
   return (
     <Flex justifyContent="space-between" alignItems="center" mt={4}>
       <Button
-        onClick={() => onPageChange(currentPage - 1)}
+        onClick={() => { onPageChange(currentPage - 1); }}
         disabled={currentPage === 1}
       >
         <ArrowBigLeft />
@@ -386,7 +386,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }: PaginationProps) 
       </Flex>
 
       <Button
-        onClick={() => onPageChange(currentPage + 1)}
+        onClick={() => { onPageChange(currentPage + 1); }}
         disabled={currentPage === totalPages}
       >
         <ArrowBigRight />
@@ -430,7 +430,7 @@ const CafeteriaList = React.memo(
      *    - Finally, filter out any canteen that ends up with no visible stores
      */
     const filteredCanteens = useMemo(() => {
-      return canteens.reduce((acc, canteen) => {
+      return canteens.reduce<CanteenWithStores[]>((acc, canteen) => {
         // Canteen-level filtering
         if (
           selectedCafeteria.length > 0 &&
@@ -527,7 +527,7 @@ const CafeteriaList = React.memo(
           return [...acc, { ...canteen, stores: visibleStores }];
         }
         return acc;
-      }, [] as CanteenWithStores[]);
+      }, []);
     }, [canteens, selectedCafeteria, filters, clientFingerprint, priceRange]);
 
     /**
@@ -537,7 +537,7 @@ const CafeteriaList = React.memo(
      */
     const [canteensForPage, totalPages] = useMemo(() => {
       if (doPaginationOnMenuCount) {
-        let pages: CanteenWithStores[][] = [];
+        const pages: CanteenWithStores[][] = [];
         let currentPageCanteens: CanteenWithStores[] = [];
         let currentMenuItemCount = 0;
         let i = 0;

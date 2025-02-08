@@ -23,7 +23,7 @@ function generateNonce() {
 }
 
 function generateHMAC(fingerprintId: string, nonce: string) {
-  let hmac = crypto.createHmac("sha256", HSK);
+  const hmac = crypto.createHmac("sha256", HSK);
   hmac.update(fingerprintId + nonce);
   return hmac.digest("hex");
 }
