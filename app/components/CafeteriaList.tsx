@@ -105,7 +105,11 @@ function isOpenNow(
 }
 
 const StoreItem: React.FC<StoreItemProps> = React.memo(
-  ({ store, onUserRatingChange }): ReactElement => {
+  ({ store, onUserRatingChange }): ReactElement | null => {
+    if (!store.menu || store.menu.length === 0) {
+      return null;
+    }
+
     const currentDate = new Date();
     const dayOfWeekLangMap = {
       SUNDAY: "อาทิตย์",
@@ -204,21 +208,20 @@ const StoreItem: React.FC<StoreItemProps> = React.memo(
   }
 );
 
-// Canteen item component
 const CanteenItem = React.memo(
   ({
     canteen,
     onUserRatingChange,
   }: {
-    canteen: Omit<CanteenWithStores, "stores"> & { stores };
+    canteen: Omit<CanteenWithStores, "stores"> & { stores: any[] };
     onUserRatingChange: (storeId: string, newRating: number, clientHMAC: string) => void;
   }) => {
-    const useNewCardLayout = useFeatureFlagEnabled('card-take-up-free-space')
+    const useNewCardLayout = useFeatureFlagEnabled('card-take-up-free-space');
     const gridTemplateColumns = useMemo(() => {
       if (useNewCardLayout) {
         return {
           base: "1fr",
-          md: "repeat(auto-fit, minmax(300px, 1fr))", // Adjust minmax value as needed
+          md: "repeat(auto-fit, minmax(300px, 1fr))", // Adjust as needed
         };
       } else {
         return {
@@ -229,6 +232,17 @@ const CanteenItem = React.memo(
       }
     }, [useNewCardLayout]);
 
+    // Filter out stores that have no menu items.
+    const filteredStores = useMemo(() => {
+      return canteen.stores.filter(
+        (store) => store.menu && store.menu.length > 0
+      );
+    }, [canteen.stores]);
+
+    // If no stores to render, hide the canteen entirely.
+    if (filteredStores.length === 0) {
+      return null;
+    }
 
     return (
       <GridItem>
@@ -249,32 +263,22 @@ const CanteenItem = React.memo(
                 )}
               </Text>
             </Card.Title>
-            <Grid
-              gap={4}
-              templateColumns={gridTemplateColumns}
-            >
-              {canteen.stores && canteen.stores.length > 0 ? (
-                canteen.stores.map((store) => (
-                  <StoreItem
-                    key={store.id}
-                    store={store}
-                    onUserRatingChange={onUserRatingChange}
-                  />
-                ))
-              ) : (
-                <Text>No stores available.</Text>
-              )}
+            <Grid gap={4} templateColumns={gridTemplateColumns}>
+              {filteredStores.map((store) => (
+                <StoreItem
+                  key={store.id}
+                  store={store}
+                  onUserRatingChange={onUserRatingChange}
+                />
+              ))}
             </Grid>
           </Card.Body>
-          {/* <Card.Footer justifyContent="flex-end">
-            <Button variant="outline">ปุ่ม</Button>
-            <Button>ทำไรดี</Button>
-          </Card.Footer> */}
         </Card.Root>
       </GridItem>
     );
   },
 );
+
 
 const Pagination = ({
   currentPage,
@@ -379,101 +383,91 @@ const CafeteriaList = React.memo(
     selectedCafeteria: string[];
     priceRange: number[];
     canteens: CanteenWithStores[];
-    onUserRatingChange: (storeId: string, newRating: number, clientHMAC: string) => void;
+    onUserRatingChange: (
+      storeId: string,
+      newRating: number,
+      clientHMAC: string,
+    ) => void;
   }) => {
     const [currentPage, setCurrentPage] = useAtom(cafeteriaListCurrentPage);
     const onUserRatingChange = useCallback(onUserRatingChangeProp, []);
     const filters = useAtomValue(filtersAtom);
-    const clientHMACFingerprint = useAtomValue(clientHMACFingerprintAtom)
-    const clientFingerprint = clientHMACFingerprint.split(':')[0]
+    const clientHMACFingerprint = useAtomValue(clientHMACFingerprintAtom);
+    const clientFingerprint = clientHMACFingerprint.split(":")[0];
 
-    const doPaginationOnMenuCount = useFeatureFlagEnabled('pagination-based-on-menu-count')
+    //    const doPaginationOnMenuCount = useFeatureFlagEnabled('pagination-based-on-menu-count')
+    const doPaginationOnMenuCount = true;
 
-    // Memoize menu item filtering
-    // Instead of multiple filters:
+    /**
+     * 1. Filter and transform canteens  
+     *    - Apply canteen filters  
+     *    - For each canteen, filter its stores (and their menu items)  
+     *    - Finally, filter out any canteen that ends up with no visible stores
+     */
     const filteredCanteens = useMemo(() => {
       return canteens.reduce((acc, canteen) => {
+        // Canteen-level filtering
         if (
           selectedCafeteria.length > 0 &&
           !selectedCafeteria.includes(canteen.id)
         ) {
-          return acc; // Skip this canteen
+          return acc;
         }
-
-        if (
-          filters.withAircon &&
-          !filters.noAircon &&
-          !canteen.withAirConditioning
-        ) {
+        if (filters.withAircon && !filters.noAircon && !canteen.withAirConditioning) {
+          return acc;
+        }
+        if (!filters.withAircon && filters.noAircon && canteen.withAirConditioning) {
           return acc;
         }
 
-        if (
-          !filters.withAircon &&
-          filters.noAircon &&
-          canteen.withAirConditioning
-        ) {
-          return acc;
-        }
-
-        // If it passes all canteen filters, then map the stores
+        // Process each store in the canteen:
         const stores = canteen.stores.map((store) => {
           const userRating = store.ratings.find(
             (rating) => rating.clientFingerprint === clientFingerprint,
           )?.rating;
 
+          // Filter the menu items for this store
           const filteredMenu = store.menu.filter((menu) => {
             // Price range filter
             if (menu.price < priceRange[0] || menu.price > priceRange[1]) {
               return false;
             }
 
-            // Sub-category filter (hardcoded mapping)
-            let includeItem = false; // Flag to track if the item should be included
-
-            if (menu.category === 'food') {
+            // Sub-category filter (example logic)
+            let includeItem = false;
+            if (menu.category === "food") {
               switch (menu.sub_category) {
-                case 'noodles':
+                case "noodles":
                   includeItem = filters.noodles;
                   break;
-                case 'soup_curry':
+                case "soup_curry":
                   includeItem = filters.soup_curry;
                   break;
-                case 'chicken_rice':
+                case "chicken_rice":
                   includeItem = filters.chicken_rice;
                   break;
-                case 'rice_curry':
+                case "rice_curry":
                   includeItem = filters.rice_curry;
                   break;
-                case 'somtum_northeastern':
+                case "somtum_northeastern":
                   includeItem = filters.somtum_northeastern;
                   break;
-                case 'steak':
+                case "steak":
                   includeItem = filters.steak;
                   break;
-                case 'japanese':
+                case "japanese":
                   includeItem = filters.japanese;
                   break;
                 default:
-                  includeItem = filters.others; // If not a specific sub-category, check "others"
+                  includeItem = filters.others;
               }
-            } else if (menu.category === 'DRINK') {
-              // You can add similar logic for drink sub-categories here
-              // if you want to filter drinks in the future.
-              // For now, we will not filter drinks based on filters except price.
-
-              // The part that currently allow all drinks to be shown on the webpage
+            } else if (menu.category === "DRINK") {
               includeItem = filters.beverage;
             } else {
-              includeItem = filters.others; // default catch all others if category is not food nor drink
+              includeItem = filters.others;
             }
 
-            // Check if "others" is selected and the item doesn't match any other filter
-            if (!includeItem && filters.others) {
-              includeItem = true;
-            }
-
-            // If no specific sub-category filters are active, include the item
+            // If no filters are active, include the item
             if (
               !filters.noodles &&
               !filters.soup_curry &&
@@ -498,27 +492,37 @@ const CafeteriaList = React.memo(
           };
         });
 
-        return [...acc, { ...canteen, stores: stores }];
-      }, []);
+        // Filter out any store that does not have any menu items.
+        const visibleStores = stores.filter(
+          (store) => store.menu && store.menu.length > 0,
+        );
+
+        // Only add the canteen if it has at least one store to display.
+        if (visibleStores.length > 0) {
+          return [...acc, { ...canteen, stores: visibleStores }];
+        }
+        return acc;
+      }, [] as CanteenWithStores[]);
     }, [canteens, selectedCafeteria, filters, clientFingerprint, priceRange]);
 
-    useEffect(() => {
-      setCurrentPage(1);
-    }, [filteredCanteens]);
-
+    /**
+     * 2. Pagination logic  
+     *    - Using only the filtered canteens (which now only include canteens that have visible stores)
+     *    - Adjust current page if it’s out-of-bounds
+     */
     const [canteensForPage, totalPages] = useMemo(() => {
       if (doPaginationOnMenuCount) {
         let pages: CanteenWithStores[][] = [];
         let currentPageCanteens: CanteenWithStores[] = [];
         let currentMenuItemCount = 0;
-        let totalCanteensProcessed = 0;
         let i = 0;
 
         while (i < filteredCanteens.length) {
           const canteen = filteredCanteens[i];
+          // Sum up the menu item counts across all stores in the canteen
           const totalMenuItems = canteen.stores.reduce(
             (sum, store) => sum + store.menu.length,
-            0
+            0,
           );
 
           if (
@@ -527,27 +531,24 @@ const CafeteriaList = React.memo(
           ) {
             currentPageCanteens.push(canteen);
             currentMenuItemCount += totalMenuItems;
-            totalCanteensProcessed++;
             i++;
           } else {
-            // Push the current page and start a new one
             pages.push(currentPageCanteens);
             currentPageCanteens = [];
             currentMenuItemCount = 0;
           }
         }
 
-        // Add any remaining canteens to the last page
         if (currentPageCanteens.length > 0) {
           pages.push(currentPageCanteens);
         }
 
-        // Ensure the current page is within bounds
-        const validCurrentPage = Math.max(1, Math.min(currentPage, pages.length));
-
-        return [pages[validCurrentPage - 1] || [], pages.length];
+        const total = pages.length;
+        // Make sure the current page is within bounds
+        const validCurrentPage = total === 0 ? 1 : Math.max(1, Math.min(currentPage, total));
+        return [pages[validCurrentPage - 1] || [], total];
       } else {
-        // Default pagination (fallback)
+        // Fallback pagination
         const startIndex = (currentPage - 1) * DEFAULT_ITEMS_PER_PAGE;
         const endIndex = startIndex + DEFAULT_ITEMS_PER_PAGE;
         return [
@@ -557,11 +558,19 @@ const CafeteriaList = React.memo(
       }
     }, [filteredCanteens, currentPage, doPaginationOnMenuCount]);
 
+    // If the current page is out of bounds, update it.
+    useEffect(() => {
+      if (totalPages > 0 && currentPage > totalPages) {
+        setCurrentPage(totalPages);
+      }
+    }, [currentPage, totalPages, setCurrentPage]);
 
-    const handlePageChange = useCallback((page: number) => {
-      setCurrentPage(page);
-    }, [setCurrentPage]);
-
+    const handlePageChange = useCallback(
+      (page: number) => {
+        setCurrentPage(page);
+      },
+      [setCurrentPage],
+    );
 
     useEffect(() => {
       scroll.scrollToTop();
@@ -570,24 +579,30 @@ const CafeteriaList = React.memo(
     return (
       <div>
         <Grid gap={4}>
-          {canteensForPage.map((canteen) => (
-            <CanteenItem
-              key={canteen.id}
-              canteen={canteen}
-              onUserRatingChange={onUserRatingChange}
-            />
-          ))}
+          {canteensForPage.length > 0 ? (
+            canteensForPage.map((canteen) => (
+              <CanteenItem
+                key={canteen.id}
+                canteen={canteen}
+                onUserRatingChange={onUserRatingChange}
+              />
+            ))
+          ) : (
+            <Text>No canteens available.</Text>
+          )}
         </Grid>
 
-        {/* Pagination controls */}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
+        {totalPages > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        )}
       </div>
     );
   },
 );
+
 
 export default CafeteriaList;
