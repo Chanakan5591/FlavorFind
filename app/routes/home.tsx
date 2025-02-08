@@ -40,8 +40,9 @@ import { getClientIPAddress } from "~/util/ip.server";
 import { rateLimiterService } from "~/util/ratelimit.server";
 import { useAtom } from "jotai";
 import { Checkbox } from "~/components/ui/checkbox";
-import { selectedCanteensAtom, priceRangeAtom, filtersAtom } from "~/stores";
+import { selectedCanteensAtom, priceRangeAtom, filtersAtom, clientHMACFingerprintAtom } from "~/stores";
 import { NumberInputField } from "~/components/ui/number-input";
+import { atomWithStorage } from "jotai/utils";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -132,12 +133,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const [filters, setFilters] = useAtom(filtersAtom);
   const [cookies, setCookie] = useCookies(["nomnom"]);
 
-  const [clientFingerprint, setClientFingerprint] = useState("");
-
   // *** NEW: local state for canteens ***
   const [localCanteens, setLocalCanteens] = useState<CanteenWithStores[]>([]);
   const [canteensInitialized, setCanteensInitialized] = useState(false);
 
+  const [clientHMACFingerprint, setClientHMACFingerprint] = useAtom(clientHMACFingerprintAtom)
 
   const hmacFetcher = useFetcher();
   const ratingFetcher = useFetcherQueueWithPromise();
@@ -153,71 +153,58 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const deferredSelectedCanteens = useDeferredValue(selectedCanteens);
   const deferredPriceRange = useDeferredValue(priceRange);
 
-  // Initialize client fingerprint from cookie
   useEffect(() => {
-    if (cookies["nomnom"]) {
-      setClientFingerprint(cookies["nomnom"].split(":")[0]);
-    }
-  }, [cookies["nomnom"]]);
-
-  useEffect(() => {
-    let firstTime = false
-    if (!cookies["nomnom"]) {
+    if (clientHMACFingerprint == "") {
       FingerprintJS.load().then((fp) => {
         fp.get().then(async (result) => {
-          hmacFetcher.submit(
+          await hmacFetcher.submit(
             { fingerprint: result.visitorId },
             { method: "POST", action: "/api/science/new_experiment" }
-          ).then(() => {
-            if (hmacFetcher.data) {
-              const hmac = hmacFetcher.data.hmac as string;
-              setCookie("nomnom", hmac, { path: "/", sameSite: "strict", maxAge: 31536000 });
-              console.log(hmac)
-              firstTime = false
-            }
-          })
+          )
         });
       });
     }
   }, []);
 
-  // --- Update local canteens when a rating update occurs ---
   useEffect(() => {
-    if (ratingFetcher.state === "idle" && ratingFetcher.data) {
-      if (!ratingFetcher.data.ok) {
-        toaster.error({
-          title: "An error occurred",
-          description:
-            "We couldn't update your rating, please try again later",
-        });
-        return;
-      }
-      const updatedStore = ratingFetcher.data.new_store as any;
-
-      setLocalCanteens((prevCanteens) =>
-        prevCanteens.map((canteen) => {
-          if (canteen.id === updatedStore.canteenId) {
-            return {
-              ...canteen,
-              stores: canteen.stores.map((store) => {
-                if (store.id === updatedStore.id) {
-                  return updatedStore;
-                }
-                return store;
-              }),
-            };
-          }
-          return canteen;
-        })
-      );
+    if (hmacFetcher.data) {
+      const hmac = hmacFetcher.data.hmac as string;
+      setClientHMACFingerprint(hmac);
+      console.log(clientHMACFingerprint)
     }
-  }, [ratingFetcher.state, ratingFetcher.data]);
+  }, [hmacFetcher.data])
 
-  const onUserRatingChange = async (storeId: string, newRating: number) => {
+  const onUserRatingChange = async (storeId: string, newRating: number, clientHMAC: string) => {
     const ratingSubmissionPromise = ratingFetcher.enqueueSubmit(
-      { storeId: storeId, newRating: newRating, hmac: cookies["nomnom"] },
+      { storeId: storeId, newRating: newRating, hmac: clientHMAC },
       { method: "POST" }
     );
+
+    ratingSubmissionPromise.then(() => {
+      if (ratingFetcher.state === "idle" && ratingFetcher.data) {
+        if (!ratingFetcher.data.ok) {
+          return;
+        }
+        const updatedStore = ratingFetcher.data.new_store as any;
+
+        setLocalCanteens((prevCanteens) =>
+          prevCanteens.map((canteen) => {
+            if (canteen.id === updatedStore.canteenId) {
+              return {
+                ...canteen,
+                stores: canteen.stores.map((store) => {
+                  if (store.id === updatedStore.id) {
+                    return updatedStore;
+                  }
+                  return store;
+                }),
+              };
+            }
+            return canteen;
+          })
+        );
+      }
+    })
 
     toaster.promise(ratingSubmissionPromise, {
       success: {
@@ -579,7 +566,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 selectedCafeteria={deferredSelectedCanteens}
                 // filters={deferredFilters}
                 onUserRatingChange={onUserRatingChange}
-                clientFingerprint={clientFingerprint}
               />
             );
           }}

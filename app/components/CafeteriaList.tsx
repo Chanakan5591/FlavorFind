@@ -29,7 +29,7 @@ import { Button } from "./ui/button";
 import ReviewStars from "./ReviewStars";
 import { AirVent, Snowflake } from "lucide-react";
 import { useAtom, useAtomValue } from "jotai";
-import { cafeteriaListCurrentPage, filtersAtom } from "~/stores";
+import { cafeteriaListCurrentPage, clientHMACFingerprintAtom, filtersAtom } from "~/stores";
 import { animateScroll as scroll } from 'react-scroll'
 import { useFeatureFlagEnabled } from 'posthog-js/react'
 
@@ -104,15 +104,8 @@ function isOpenNow(
   return currentTimeUTCPlus7 >= startTime && currentTimeUTCPlus7 <= endTime;
 }
 
-// Store item component
-const StoreItem = React.memo(
-  ({
-    store,
-    onUserRatingChange,
-  }: {
-    store: CanteenWithStores["stores"][number] & { userStoreRating: number };
-    onUserRatingChange: (storeId: string, newRating: number) => void;
-  }) => {
+const StoreItem: React.FC<StoreItemProps> = React.memo(
+  ({ store, onUserRatingChange }): ReactElement => {
     const currentDate = new Date();
     const dayOfWeekLangMap = {
       SUNDAY: "อาทิตย์",
@@ -124,6 +117,30 @@ const StoreItem = React.memo(
       SATURDAY: "เสาร์",
     };
 
+    const clientHMACFingerprint = useAtomValue(clientHMACFingerprintAtom);
+
+    // State to manage the local rating count.  Initialize from the store's rating length
+    const [ratingCount, setRatingCount] = useState(store.ratings.length);
+
+    const handleRatingChange = (newRating: number) => {
+      onUserRatingChange(store.id, newRating, clientHMACFingerprint);
+
+      // Optimistically update the rating count locally
+      if (store.ratings.length === 0 && store.userStoreRating === 0) { // Only increment if the user hasn't rated before based on initial props
+        setRatingCount(1);
+      } else if (store.userStoreRating === 0 && store.ratings.length > 0) {
+        setRatingCount(prevCount => prevCount + 1);
+      }
+      // Note:  In a real application, you might want to refetch/update the store data
+      // from the server after a successful rating change to ensure consistency,
+      // rather than relying solely on local state for the updated rating count.
+    };
+
+    // Calculate the average rating
+    const averageRating = store.ratings.length > 0
+      ? Math.round((store.ratings.reduce((sum, value) => sum + value.rating, 0) / store.ratings.length) * 100) / 100
+      : 0; // Handle the case where there are no ratings
+
     return (
       <GridItem key={store.id}>
         <Card.Root width="full" bg="#E0F2E9">
@@ -131,23 +148,12 @@ const StoreItem = React.memo(
             <Card.Title mt="2" display="flex" justifyContent="space-between">
               <Text>{store.name}</Text>
               <Box>
-                <Text as='span' fontSize='sm' fontWeight='normal' mr={1}>({store.ratings.length})</Text>
+                <Text as='span' fontSize='sm' fontWeight='normal' mr={1}>({ratingCount})</Text>
                 <ReviewStars
-                  averageRating={
-                    Math.round(
-                      (store.ratings.reduce(
-                        (sum, value) => sum + value.rating,
-                        0,
-                      ) /
-                        store.ratings.length) *
-                      100,
-                    ) / 100
-                  }
+                  averageRating={averageRating}
                   userRating={store.userStoreRating}
                   storeId={store.id}
-                  onRatingChange={(newRating: number) =>
-                    onUserRatingChange(store.id, newRating)
-                  }
+                  onRatingChange={handleRatingChange}
                 />
               </Box>
             </Card.Title>
@@ -195,7 +201,7 @@ const StoreItem = React.memo(
         </Card.Root>
       </GridItem>
     );
-  },
+  }
 );
 
 // Canteen item component
@@ -205,7 +211,7 @@ const CanteenItem = React.memo(
     onUserRatingChange,
   }: {
     canteen: Omit<CanteenWithStores, "stores"> & { stores };
-    onUserRatingChange: (storeId: string, newRating: number) => void;
+    onUserRatingChange: (storeId: string, newRating: number, clientHMAC: string) => void;
   }) => {
     const useNewCardLayout = useFeatureFlagEnabled('card-take-up-free-space')
     const gridTemplateColumns = useMemo(() => {
@@ -369,17 +375,17 @@ const CafeteriaList = React.memo(
     priceRange,
     canteens,
     onUserRatingChange: onUserRatingChangeProp,
-    clientFingerprint,
   }: {
     selectedCafeteria: string[];
     priceRange: number[];
     canteens: CanteenWithStores[];
-    onUserRatingChange: (storeId: string, newRating: number) => void;
-    clientFingerprint: string;
+    onUserRatingChange: (storeId: string, newRating: number, clientHMAC: string) => void;
   }) => {
     const [currentPage, setCurrentPage] = useAtom(cafeteriaListCurrentPage);
     const onUserRatingChange = useCallback(onUserRatingChangeProp, []);
     const filters = useAtomValue(filtersAtom);
+    const clientHMACFingerprint = useAtomValue(clientHMACFingerprintAtom)
+    const clientFingerprint = clientHMACFingerprint.split(':')[0]
 
     const doPaginationOnMenuCount = useFeatureFlagEnabled(
       'pagination-based-on-menu-count',
@@ -503,9 +509,6 @@ const CafeteriaList = React.memo(
     }, [filteredCanteens]);
 
     let items_per_page = DEFAULT_ITEMS_PER_PAGE;
-
-    const startIndex = (currentPage - 1) * items_per_page;
-    const endIndex = startIndex + items_per_page;
 
     const [canteensForPage, totalPages] = useMemo(() => {
       if (doPaginationOnMenuCount) {

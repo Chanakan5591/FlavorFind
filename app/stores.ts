@@ -14,6 +14,7 @@
  * Copyright 2025 Chanakan Moongthin.
  */
 import { atom } from "jotai";
+import { atomWithStorage } from 'jotai/utils'
 
 const selectedCanteensAtom = atom<string[]>([]);
 const priceRangeAtom = atom<number[]>([5, 150]);
@@ -34,6 +35,7 @@ const filtersAtom = atom({
 });
 const totalPlannedBudgetsAtom = atom<number>(300);
 const cafeteriaListCurrentPage = atom<number>(1)
+const clientHMACFingerprintAtom = atomWithStorage<string>('nomnom', '')
 
 export {
   totalPlannedBudgetsAtom,
@@ -42,5 +44,6 @@ export {
   mealsPlanningAmountAtom,
   withBeverageAtom,
   filtersAtom,
-  cafeteriaListCurrentPage
+  cafeteriaListCurrentPage,
+  clientHMACFingerprintAtom
 };
