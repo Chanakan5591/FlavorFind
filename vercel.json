@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/events/ingest/static/:path*",
+      "destination": "https://us-assets.i.posthog.com/static/:path*"
+    },
+    {
+      "source": "/events/ingest/:path*",
+      "destination": "https://us.i.posthog.com/:path*"
+    }
+  ]
+}
