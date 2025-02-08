@@ -133,10 +133,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const [cookies, setCookie] = useCookies(["nomnom"]);
 
   const [clientFingerprint, setClientFingerprint] = useState("");
-  const [firstTime, setFirstTime] = useState(false);
 
   // *** NEW: local state for canteens ***
   const [localCanteens, setLocalCanteens] = useState<CanteenWithStores[]>([]);
+  const [canteensInitialized, setCanteensInitialized] = useState(false);
+
 
   const hmacFetcher = useFetcher();
   const ratingFetcher = useFetcherQueueWithPromise();
@@ -160,28 +161,25 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   }, [cookies["nomnom"]]);
 
   useEffect(() => {
+    let firstTime = false
     if (!cookies["nomnom"]) {
-      setFirstTime(true);
       FingerprintJS.load().then((fp) => {
-        fp.get().then((result) => {
+        fp.get().then(async (result) => {
           hmacFetcher.submit(
             { fingerprint: result.visitorId },
             { method: "POST", action: "/api/science/new_experiment" }
-          );
+          ).then(() => {
+            if (hmacFetcher.data) {
+              const hmac = hmacFetcher.data.hmac as string;
+              setCookie("nomnom", hmac, { path: "/", sameSite: "strict", maxAge: 31536000 });
+              console.log(hmac)
+              firstTime = false
+            }
+          })
         });
       });
     }
   }, []);
-
-  useEffect(() => {
-    if (firstTime && hmacFetcher.state === "idle") {
-      if (hmacFetcher.data) {
-        const hmac = hmacFetcher.data.hmac as string;
-        setCookie("nomnom", hmac, { path: "/", sameSite: "strict", maxAge: 31536000 });
-        setFirstTime(false);
-      }
-    }
-  }, [hmacFetcher.state]);
 
   // --- Update local canteens when a rating update occurs ---
   useEffect(() => {
@@ -287,14 +285,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   // Initialize the select collection once we have canteens data
   const [canteensCollection, setCanteensCollection] = useState<any>(null);
-  const initCanteensCollection = (resolvedCanteens: CanteenWithStores[]) => {
+  const initCanteensCollection = useCallback((resolvedCanteens: CanteenWithStores[]) => {
     const collection = createListCollection({
       items: resolvedCanteens,
       itemToString: (canteen: CanteenWithStores) => canteen.name,
       itemToValue: (canteen: CanteenWithStores) => canteen.id,
     });
     setCanteensCollection(collection);
-  };
+  }, []);
 
   const priceSlider = useSlider({
     thumbAlignment: "center",
@@ -331,6 +329,21 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     if (isNaN(value)) value = 0
     priceSlider.setValue([priceSlider.value[0], mapRangeToPercentage(value)])
   }
+
+  useEffect(() => {
+    let isMounted = true;
+    // We assume canteens is a promise that eventually resolves to the canteens data.
+    Promise.resolve(canteens).then((resolvedCanteens: CanteenWithStores[]) => {
+      if (isMounted && resolvedCanteens && !canteensInitialized) {
+        setLocalCanteens(resolvedCanteens);
+        initCanteensCollection(resolvedCanteens);
+        setCanteensInitialized(true);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [canteens, canteensInitialized, initCanteensCollection]);
 
   return (
     <Box padding={8} colorPalette="brand">
@@ -555,11 +568,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           errorElement={<div>Could not load canteens.</div>}
         >
           {(resolvedCanteens: CanteenWithStores[]) => {
-            // On first resolution, initialize both the select collection and local state.
-            if (localCanteens.length === 0) {
-              setLocalCanteens(resolvedCanteens);
-              initCanteensCollection(resolvedCanteens);
-            }
             return (
               <LazyCafeteriaList
                 // Pass the local data, and use the deferred filtering state so that the heavy
