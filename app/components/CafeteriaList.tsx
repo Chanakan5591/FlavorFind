@@ -387,9 +387,7 @@ const CafeteriaList = React.memo(
     const clientHMACFingerprint = useAtomValue(clientHMACFingerprintAtom)
     const clientFingerprint = clientHMACFingerprint.split(':')[0]
 
-    const doPaginationOnMenuCount = useFeatureFlagEnabled(
-      'pagination-based-on-menu-count',
-    );
+    const doPaginationOnMenuCount = useFeatureFlagEnabled('pagination-based-on-menu-count')
 
     // Memoize menu item filtering
     // Instead of multiple filters:
@@ -508,58 +506,57 @@ const CafeteriaList = React.memo(
       setCurrentPage(1);
     }, [filteredCanteens]);
 
-    let items_per_page = DEFAULT_ITEMS_PER_PAGE;
-
     const [canteensForPage, totalPages] = useMemo(() => {
       if (doPaginationOnMenuCount) {
-        // Calculate canteens per page based on menu item count
+        let pages: CanteenWithStores[][] = [];
         let currentPageCanteens: CanteenWithStores[] = [];
         let currentMenuItemCount = 0;
-        let startIndex = (currentPage - 1) * DEFAULT_ITEMS_PER_PAGE; // Start with a base number of canteens
-        let maxCanteens = filteredCanteens.length;
-        items_per_page = DEFAULT_ITEMS_PER_PAGE;
+        let totalCanteensProcessed = 0;
+        let i = 0;
 
-        for (
-          let i = startIndex;
-          i < maxCanteens && currentMenuItemCount <= MAX_MENU_ITEMS_PER_PAGE;
-          i++
-        ) {
+        while (i < filteredCanteens.length) {
           const canteen = filteredCanteens[i];
           const totalMenuItems = canteen.stores.reduce(
             (sum, store) => sum + store.menu.length,
-            0,
+            0
           );
 
-          if (currentMenuItemCount + totalMenuItems <= MAX_MENU_ITEMS_PER_PAGE) {
+          if (
+            currentMenuItemCount + totalMenuItems <= MAX_MENU_ITEMS_PER_PAGE ||
+            currentPageCanteens.length === 0 // Always allow at least one canteen per page
+          ) {
             currentPageCanteens.push(canteen);
             currentMenuItemCount += totalMenuItems;
-            items_per_page++;
+            totalCanteensProcessed++;
+            i++;
           } else {
-            // If adding this canteen exceeds the limit, break the loop
-            break;
+            // Push the current page and start a new one
+            pages.push(currentPageCanteens);
+            currentPageCanteens = [];
+            currentMenuItemCount = 0;
           }
         }
 
-        // Recalculate items_per_page based on actual number of displayed items
-        items_per_page = currentPageCanteens.length;
+        // Add any remaining canteens to the last page
+        if (currentPageCanteens.length > 0) {
+          pages.push(currentPageCanteens);
+        }
 
-        // Calculate total pages
-        const totalCanteens = filteredCanteens.length;
-        const totalPages = Math.ceil(totalCanteens / items_per_page);
-        return [currentPageCanteens, totalPages];
+        // Ensure the current page is within bounds
+        const validCurrentPage = Math.max(1, Math.min(currentPage, pages.length));
+
+        return [pages[validCurrentPage - 1] || [], pages.length];
       } else {
-        // Original pagination logic
-
+        // Default pagination (fallback)
         const startIndex = (currentPage - 1) * DEFAULT_ITEMS_PER_PAGE;
         const endIndex = startIndex + DEFAULT_ITEMS_PER_PAGE;
-        const canteensForPage = filteredCanteens.slice(startIndex, endIndex);
-        const totalPages = Math.ceil(
-          filteredCanteens.length / DEFAULT_ITEMS_PER_PAGE,
-        );
-        items_per_page = DEFAULT_ITEMS_PER_PAGE; // Reset item page
-        return [canteensForPage, totalPages];
+        return [
+          filteredCanteens.slice(startIndex, endIndex),
+          Math.ceil(filteredCanteens.length / DEFAULT_ITEMS_PER_PAGE),
+        ];
       }
     }, [filteredCanteens, currentPage, doPaginationOnMenuCount]);
+
 
     const handlePageChange = useCallback((page: number) => {
       setCurrentPage(page);
