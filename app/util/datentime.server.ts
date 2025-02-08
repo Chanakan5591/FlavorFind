@@ -56,7 +56,7 @@ async function findMatchingStores(
   },
   cafeteriaIds: string[],
 ) {
-  // Fetch all food stores
+  // Fetch all food stores that have at least one meal within the price range
   const allStores = await prisma.stores.findMany({
     where: {
       canteenId: {
@@ -70,41 +70,45 @@ async function findMatchingStores(
           category: {
             not: "DRINK",
           },
+          price: {
+            gte: mealCriteria.priceRange ? mealCriteria.priceRange[0] : undefined,
+            lte: mealCriteria.priceRange ? mealCriteria.priceRange[1] : undefined,
+          },
           // Dynamically build the OR clause
           ...(mealCriteria.filters &&
-          Object.values(mealCriteria.filters).some(Boolean)
+            Object.values(mealCriteria.filters).some(Boolean)
             ? {
-                OR: [
-                  mealCriteria.filters.noodles
-                    ? { sub_category: { equals: "noodles" } }
-                    : null,
-                  mealCriteria.filters.somtum_northeastern
-                    ? { sub_category: { equals: "somtum_northeastern" } }
-                    : null,
-                  mealCriteria.filters.chicken_rice
-                    ? { sub_category: { equals: "chicken_rice" } }
-                    : null,
-                  mealCriteria.filters.rice_curry
-                    ? { sub_category: { equals: "rice_curry" } }
-                    : null,
-                  mealCriteria.filters.steak
-                    ? { sub_category: { equals: "steak" } }
-                    : null,
-                  mealCriteria.filters.japanese
-                    ? { sub_category: { equals: "japanese" } }
-                    : null,
-                  mealCriteria.filters.others
-                    ? { sub_category: { equals: "others" } }
-                    : null,
-                ].filter(Boolean), // Remove null entries
-              }
+              OR: [
+                mealCriteria.filters.noodles
+                  ? { sub_category: { equals: "noodles" } }
+                  : null,
+                mealCriteria.filters.somtum_northeastern
+                  ? { sub_category: { equals: "somtum_northeastern" } }
+                  : null,
+                mealCriteria.filters.chicken_rice
+                  ? { sub_category: { equals: "chicken_rice" } }
+                  : null,
+                mealCriteria.filters.rice_curry
+                  ? { sub_category: { equals: "rice_curry" } }
+                  : null,
+                mealCriteria.filters.steak
+                  ? { sub_category: { equals: "steak" } }
+                  : null,
+                mealCriteria.filters.japanese
+                  ? { sub_category: { equals: "japanese" } }
+                  : null,
+                mealCriteria.filters.others
+                  ? { sub_category: { equals: "others" } }
+                  : null,
+              ].filter(Boolean), // Remove null entries
+            }
             : {}), // If no filters are active, omit the OR clause
         },
       },
     },
   });
 
-  // Fetch all drink stores
+  // Fetch all drink stores that have at least one drink within the price range
   const drinkStores = await prisma.stores.findMany({
     where: {
       canteenId: {
@@ -116,6 +120,10 @@ async function findMatchingStores(
       menu: {
         some: {
           category: "DRINK",
+          price: {
+            gte: mealCriteria.priceRange ? mealCriteria.priceRange[0] : undefined,
+            lte: mealCriteria.priceRange ? mealCriteria.priceRange[1] : undefined,
+          },
         },
       },
     },

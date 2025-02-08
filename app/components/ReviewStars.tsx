@@ -34,7 +34,7 @@ export default function ReviewStars({
 
   useEffect(() => {
     setSelectedUserRating(userRating);
-  }, [userRating]); 
+  }, [userRating]);
 
   const currentUserRating = hoveredRating !== null ? hoveredRating : selectedUserRating;
 
@@ -71,7 +71,7 @@ export default function ReviewStars({
           display: "flex",
           zIndex: 1,
           pointerEvents: "none",
-          color: "#ddd", // Light gray for average stars
+          color: "#fff500", // Light gray for average stars
         }}
       >
         {[...Array(5)].map((_, index) => {

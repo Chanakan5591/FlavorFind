@@ -235,6 +235,9 @@ function extractMealDateTime(
 /**
  * Filters canteens based on user preferences and shuffles them deterministically.
  */
+/**
+ * Filters canteens based on user preferences and shuffles them deterministically.
+ */
 async function filterAndShuffleCanteens(
   selectedCanteens: string[],
   filters: Record<string, boolean>,
@@ -257,12 +260,34 @@ async function filterAndShuffleCanteens(
             : undefined,
       },
       withAirConditioning: airConditioningFilter,
+      stores: {
+        some: {
+          menu: {
+            some: {
+              category: { not: "DRINK" }, // Only food items are considered for canteen filtering.
+              price: {
+                gte: priceRange ? priceRange[0] : undefined,
+                lte: priceRange ? priceRange[1] : undefined,
+              },
+            },
+          },
+        },
+      },
     },
+    include: {  // Include stores data, otherwise you won't be able to shuffle based on that information
+      stores: true
+    }
   });
+
+  // Remove canteens that have no stores after filtering
+  filteredCanteens = filteredCanteens.filter(canteen => {
+    return canteen.stores.length > 0
+  })
 
   if (filteredCanteens.length > 1) {
     filteredCanteens = shuffle(filteredCanteens, seed);
   }
+
   return filteredCanteens;
 }
 
@@ -376,57 +401,87 @@ function pickMealAndDrink(
   usedMeals: Set<string>,
   usedDrinks: Set<string>,
   planId: string,
+  priceRange: number[], // Add priceRange as a parameter
 ) {
   let drinkEntry: StoresMenu | undefined;
   if (withBeverage && drinkOptions.length > 0) {
-    // If all drink options have been used, allow reuse by clearing the used set.
-    if (usedDrinks.size >= drinkOptions.length) {
-      usedDrinks.clear();
-    }
     let drinkSeedOffset = 0;
-    do {
+    let drinkOptionsToUse = [...drinkOptions]; // Create a mutable copy
+
+    while (!drinkEntry && drinkOptionsToUse.length > 0) {
+      if (usedDrinks.size >= drinkOptionsToUse.length) {
+        usedDrinks.clear();
+      }
+
       const drinkSpecificSeed = stringToHash(
         foodStore.id + planId + "drink" + drinkSeedOffset,
       );
-      drinkEntry = seededRandomPick(drinkOptions, drinkSpecificSeed);
+      drinkEntry = seededRandomPick(drinkOptionsToUse, drinkSpecificSeed);
       drinkSeedOffset++;
-    } while (
-      drinkEntry &&
-      usedDrinks.has(getMenuItemId(drinkEntry)) &&
-      drinkSeedOffset < drinkOptions.length + 1
-    );
 
-    if (drinkEntry) {
-      usedDrinks.add(getMenuItemId(drinkEntry));
+
+      if (drinkEntry && usedDrinks.has(getMenuItemId(drinkEntry))) {
+        drinkEntry = undefined; // Reset to allow trying another option
+      } else if (drinkEntry) {
+        usedDrinks.add(getMenuItemId(drinkEntry));
+      }
     }
-  }
 
-  // If all food options have been used, allow reuse by clearing the used set.
-  if (filteredMenu.length > 0 && usedMeals.size >= filteredMenu.length) {
-    usedMeals.clear();
+    // If still no drink entry, relax the price range constraints.
+    if (!drinkEntry && withBeverage && drinkStore && drinkStore.menu.length > 0) {
+      const relaxedDrinkOptions = drinkStore.menu.filter(
+        (menu) =>
+          menu.category === "DRINK" &&
+          menu.sub_category !== "toppings",
+      );
+      if (relaxedDrinkOptions.length > 0) {
+        let drinkSeedOffsetRelaxed = 0;
+        let relaxedDrinkEntry;
+        do {
+          const drinkSpecificSeed = stringToHash(
+            foodStore.id + planId + "drinkRelaxed" + drinkSeedOffsetRelaxed,
+          );
+          relaxedDrinkEntry = seededRandomPick(relaxedDrinkOptions, drinkSpecificSeed);
+          drinkSeedOffsetRelaxed++;
+        } while (
+          relaxedDrinkEntry &&
+          usedDrinks.has(getMenuItemId(relaxedDrinkEntry)) &&
+          drinkSeedOffsetRelaxed < relaxedDrinkOptions.length + 1
+        );
+        drinkEntry = relaxedDrinkEntry;
+        if (drinkEntry) usedDrinks.add(getMenuItemId(drinkEntry)); // still add to used
+      }
+
+    }
   }
 
   let pickedFood: StoresMenu | undefined;
   let mealSeedOffset = 0;
-  do {
+  let filteredMenuToUse = [...filteredMenu];
+
+  while (!pickedFood && filteredMenuToUse.length > 0) {
+    if (usedMeals.size >= filteredMenuToUse.length) {
+      usedMeals.clear();
+    }
+
     const mealSpecificSeed = stringToHash(
       foodStore.id + planId + "meal" + mealSeedOffset,
     );
-    pickedFood = seededRandomPick(filteredMenu, mealSpecificSeed);
+    pickedFood = seededRandomPick(filteredMenuToUse, mealSpecificSeed);
     mealSeedOffset++;
-  } while (
-    pickedFood &&
-    usedMeals.has(getMenuItemId(pickedFood)) &&
-    mealSeedOffset < filteredMenu.length + 1
-  );
 
-  // Fallback if nothing was picked
+    if (pickedFood && usedMeals.has(getMenuItemId(pickedFood))) {
+      pickedFood = undefined; //Reset for another try
+    } else if (pickedFood) {
+      usedMeals.add(getMenuItemId(pickedFood));
+    }
+
+  }
+
+  // Fallback if nothing was picked, even after reuse.
   if (!pickedFood) {
     if (filteredMenu[0] !== undefined) pickedFood = filteredMenu[0]
   }
-
-  if (pickedFood)
-    usedMeals.add(getMenuItemId(pickedFood));
 
   return {
     pickedFood,
@@ -445,16 +500,17 @@ function pickCheapestMealAndDrink(
   drinkOptions: StoresMenu[],
 ) {
   // Choose the cheapest food option
-  const pickedFood = filteredMenu.reduce((prev, curr) =>
+  const pickedFood = filteredMenu.length > 0 ? filteredMenu.reduce((prev, curr) =>
     curr.price < prev.price ? curr : prev,
-  );
+  ) : undefined;
 
   let pickedDrink: StoresMenu | undefined;
   if (withBeverage && drinkOptions.length > 0) {
-    pickedDrink = drinkOptions.reduce((prev, curr) =>
+    pickedDrink = drinkOptions.length > 0 ? drinkOptions.reduce((prev, curr) =>
       curr.price < prev.price ? curr : prev,
-    );
+    ) : undefined;
   }
+
   return { pickedFood, pickedDrink };
 }
 
@@ -522,13 +578,21 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     planId,
   );
 
+  console.log(selectedStoresForEachMeal)
+
+  let selectedStoresForEachMealFiltered: SpecificStoreWithMeal[] = []
+
   for (const mealstore of selectedStoresForEachMeal) {
-    if (!mealstore.foodStore || !mealstore.drinkStore) {
-      return {
-        selectedMenu: [],
-        budgetUsed: 0,
-        totalPlannedBudgets
-      }
+    if (mealstore.foodStore) {
+      selectedStoresForEachMealFiltered.push(mealstore)
+    }
+  }
+
+  if (selectedStoresForEachMeal.length === 0) {
+    return {
+      selectedMenu: [],
+      budgetUsed: 0,
+      totalPlannedBudgets
     }
   }
 
@@ -587,6 +651,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
       usedMeals,
       usedDrinks,
       planId,
+      priceRange, // Pass priceRange to pickMealAndDrink
     );
 
     return {
@@ -669,7 +734,7 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
   const fallbackTotal = fallbackMenu.reduce((sum, meal) => {
     return (
-      sum + meal.pickedMeal.price + (meal.drinkMenu ? meal.drinkMenu.price : 0)
+      sum + (meal.pickedMeal ? meal.pickedMeal.price : 0) + ((meal.drinkMenu) ? meal.drinkMenu.price : 0)
     );
   }, 0);
 
@@ -747,104 +812,117 @@ export default function NewPlan({ loaderData }: Route.ComponentProps) {
             },
           }}
         >
-          {selectedMenu!.map((meal) => (
-            <Box key={meal.meal.mealNumber}>
-              {meal.pickedMeal ? (
-                <Box
-                  bg="accent.300"
-                  px={4}
-                  pt={4}
-                  pb={2}
-                  rounded="xl"
-                  position="relative"
-                  boxShadow="lg"
-                  border="2px solid"
-                  zIndex={2}
-                >
-                  <Box
-                    rounded="full"
-                    bg="bg"
-                    w={4}
-                    h={4}
-                    right={2}
-                    top={2}
-                    position="absolute"
-                    border="2px solid"
-                  ></Box>
+          {selectedMenu && selectedMenu.length != 0 ? (
+            <>
+              {selectedMenu!.map((meal) => (
+                <Box key={meal.meal.mealNumber}>
+                  {meal.pickedMeal ? (
+                    <Box
+                      bg="accent.300"
+                      px={4}
+                      pt={4}
+                      pb={2}
+                      rounded="xl"
+                      position="relative"
+                      boxShadow="lg"
+                      border="2px solid"
+                      zIndex={2}
+                    >
+                      <Box
+                        rounded="full"
+                        bg="bg"
+                        w={4}
+                        h={4}
+                        right={2}
+                        top={2}
+                        position="absolute"
+                        border="2px solid"
+                      ></Box>
 
-                  <Text position="absolute" fontSize={16} bottom={2} left={2}>
-                    {parseInt(meal.meal.mealNumber) + 1}
-                  </Text>
-                  <Text position="absolute" right={2} bottom={2}>
-                    ฿{meal.pickedMeal.price}
-                  </Text>
-                  <VStack minW="16rem" h="full" justifyContent="space-between">
-                    <VStack gap={1} mb={4}>
-                      <Text
-                        fontSize={18}
-                        fontWeight="semibold"
-                        width="14ch"
-                        textAlign="center"
-                      >
-                        {meal.pickedMeal.name}
+                      <Text position="absolute" fontSize={16} bottom={2} left={2}>
+                        {parseInt(meal.meal.mealNumber) + 1}
                       </Text>
-                      <Text textAlign="center">@ {meal.store.name}</Text>
-                      <Text textAlign="center">{meal.canteenName}</Text>
-                    </VStack>
-                    <Text>
-                      {meal.meal.date}{" "}
-                      {meal.meal.date && meal.meal.time ? "|" : ""}{" "}
-                      {meal.meal.time}
-                    </Text>
-                  </VStack>
-                </Box>
-              ) : (
-                <Box
-                  bg="gray.200"
-                  px={4}
-                  py={2}
-                  rounded="xl"
-                  textAlign="center"
-                  border="2px solid gray"
-                  zIndex={2}
-                >
-                  <Text color="gray.700">Couldn't find suitable meal</Text>
-                </Box>
-              )}
+                      <Text position="absolute" right={2} bottom={2}>
+                        ฿{meal.pickedMeal.price}
+                      </Text>
+                      <VStack minW="16rem" h="full" justifyContent="space-between">
+                        <VStack gap={1} mb={4}>
+                          <Text
+                            fontSize={18}
+                            fontWeight="semibold"
+                            width="14ch"
+                            textAlign="center"
+                          >
+                            {meal.pickedMeal.name}
+                          </Text>
+                          <Text textAlign="center">@ {meal.store.name}</Text>
+                          <Text textAlign="center">{meal.canteenName}</Text>
+                        </VStack>
+                        <Text>
+                          {meal.meal.date}{" "}
+                          {meal.meal.date && meal.meal.time ? "|" : ""}{" "}
+                          {meal.meal.time}
+                        </Text>
+                      </VStack>
+                    </Box>
+                  ) : (
+                    <Box
+                      bg="gray.200"
+                      px={4}
+                      py={4}
+                      rounded="xl"
+                      textAlign="center"
+                      border="2px solid gray"
+                      position="relative"
+                      zIndex={4}
+                    >
+                      <Text color="gray.700">Couldn't find suitable meal</Text>
+                    </Box>
+                  )}
 
 
-              {meal.drinkMenu && meal.drinkStore && (
-                <Flex
-                  bg="brand.300"
-                  rounded="lg"
-                  minH={14}
-                  pt={4}
-                  px={2}
-                  mt={-4}
-                  border="2px solid"
-                  alignItems="center"
-                >
-                  <HStack
-                    textAlign="center"
-                    h="full"
-                    w="full"
-                    justifyContent="space-between"
-                  >
-                    <Text color="white">{meal.drinkMenu.name}</Text>
-                    <Text color="white">@ {meal.drinkStore.name}</Text>
-                    <Text color="white">฿{meal.drinkMenu.price}</Text>
-                  </HStack>
-                </Flex>
-              )}
-            </Box>
-          ))}
+                  {meal.drinkMenu && meal.drinkStore && (
+                    <Flex
+                      bg="brand.300"
+                      rounded="lg"
+                      minH={14}
+                      pt={4}
+                      px={2}
+                      mt={-4}
+                      border="2px solid"
+                      alignItems="center"
+                    >
+                      <HStack
+                        textAlign="center"
+                        h="full"
+                        w="full"
+                        justifyContent="space-between"
+                      >
+                        <Text color="white">{meal.drinkMenu.name}</Text>
+                        <Text color="white">@ {meal.drinkStore.name}</Text>
+                        <Text color="white">฿{meal.drinkMenu.price}</Text>
+                      </HStack>
+                    </Flex>
+                  )}
+                </Box>
+              ))}
+            </>
+          ) : (
+            <Text bg='bg.error' p={4} rounded='2xl' border='dashed' borderColor='fg.error' maxWidth='32ch' md={{
+              maxWidth: '50ch'
+            }} >Unable to find you a meal fitting your criteria, maybe try getting a new meal again, or adjust your filters.</Text>
+          )}
         </Grid>
         <Box md={{ gap: 4, flexDir: 'row', width: 'fit-content', display: 'flex', gridTemplateColumns: 'unset' }} display='grid' gridTemplateColumns='repeat(2, 1fr)' width='18rem' gap={2} flexDir='column' css={{
-          "& > *:last-child:nth-of-type(odd)": {
+          "& > *:first-child:nth-of-type(odd)": {
             gridColumn: "1 / -1",
           },
         }}
         >
+          <Link to='/survey' prefetch="viewport">
+            <Button md={{ width: '10rem' }} width='full' colorPalette='accent'>Do a survey</Button>
+          </Link>
+
           <Button
             md={{
               width: '10rem'
@@ -856,9 +934,6 @@ export default function NewPlan({ loaderData }: Route.ComponentProps) {
           >
             Get me a new meal!
           </Button>
-          <Link to='/survey' prefetch="viewport">
-            <Button md={{ width: '10rem' }} width='full' colorPalette='accent'>Do a survey</Button>
-          </Link>
           <Link to="/" prefetch='viewport'>
             <Button md={{ width: '10rem' }} width='full'>Go back</Button>
           </Link>
