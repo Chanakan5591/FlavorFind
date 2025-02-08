@@ -15,7 +15,8 @@
  */
 import prisma from "~/db.server";
 
-function timeToMinutes(timeStr: string) {
+function timeToMinutes(timeStr?: string) {
+  if (!timeStr) return null
   const [hours, minutes] = timeStr.split(":").map(Number);
   return hours * 60 + minutes;
 }
