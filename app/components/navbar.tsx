@@ -14,15 +14,18 @@
  * Copyright 2025 Chanakan Moongthin.
  */
 import { Box, Flex, Button } from "@chakra-ui/react";
+import { useSetAtom } from "jotai";
 import { Link } from "react-router";
+import { cafeteriaListCurrentPage } from "~/stores";
 
 export default function Navbar() {
+  const setCafeteriaListCurrentPage = useSetAtom(cafeteriaListCurrentPage)
   return (
     <Box px={4} colorPalette="brand">
       {/* Centered Logo */}
       <Flex h={16} w="full" justifyContent="space-between" alignItems="center">
         <Button visibility='hidden' disabled>Take Survey</Button>
-        <Link to="/">
+        <Link to="/" onClick={(_) => setCafeteriaListCurrentPage(1)}>
           <Box
             fontWeight="bold"
             fontSize="xl"

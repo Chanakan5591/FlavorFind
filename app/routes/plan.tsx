@@ -581,14 +581,16 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   console.log(selectedStoresForEachMeal)
 
   let selectedStoresForEachMealFiltered: SpecificStoreWithMeal[] = []
+  let haveFood = false;
 
   for (const mealstore of selectedStoresForEachMeal) {
     if (mealstore.foodStore) {
+      haveFood = true;
       selectedStoresForEachMealFiltered.push(mealstore)
     }
   }
 
-  if (selectedStoresForEachMeal.length === 0) {
+  if (!haveFood) {
     return {
       selectedMenu: [],
       budgetUsed: 0,

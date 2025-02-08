@@ -33,6 +33,7 @@ const filtersAtom = atom({
   others: false,
 });
 const totalPlannedBudgetsAtom = atom<number>(300);
+const cafeteriaListCurrentPage = atom<number>(1)
 
 export {
   totalPlannedBudgetsAtom,
@@ -41,4 +42,5 @@ export {
   mealsPlanningAmountAtom,
   withBeverageAtom,
   filtersAtom,
+  cafeteriaListCurrentPage
 };

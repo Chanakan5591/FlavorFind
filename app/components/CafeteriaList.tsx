@@ -28,8 +28,8 @@ import type { CanteenWithStores } from "~/types";
 import { Button } from "./ui/button";
 import ReviewStars from "./ReviewStars";
 import { AirVent, Snowflake } from "lucide-react";
-import { useAtomValue } from "jotai";
-import { filtersAtom } from "~/stores";
+import { useAtom, useAtomValue } from "jotai";
+import { cafeteriaListCurrentPage, filtersAtom } from "~/stores";
 import { animateScroll as scroll } from 'react-scroll'
 import { useFeatureFlagEnabled } from 'posthog-js/react'
 
@@ -270,10 +270,99 @@ const CanteenItem = React.memo(
   },
 );
 
+const Pagination = ({
+  currentPage,
+  totalPages,
+  onPageChange,
+}: {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) => {
+  const pageNumbers = useMemo(() => {
+    const pages: (number | '...')[] = [];
+    const visiblePageCount = 5; // Adjust for how many page numbers to show
+
+    if (totalPages <= visiblePageCount) {
+      // Show all page numbers if totalPages is less than or equal to visiblePageCount
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Add first page
+      pages.push(1);
+
+      // Add ellipsis if needed
+      if (currentPage > 3) {
+        pages.push('...');
+      }
+
+      // Add current page and neighbors
+      let startPage = Math.max(currentPage - 1, 2);
+      let endPage = Math.min(currentPage + 1, totalPages - 1);
+
+      // Adjust start and end if they are too close to the beginning or end
+      if (endPage - startPage < 2) {
+        if (currentPage < totalPages - 1) {
+          endPage = Math.min(endPage + (2 - (endPage - startPage)), totalPages - 1);
+        } else {
+          startPage = Math.max(startPage - (2 - (endPage - startPage)), 2);
+        }
+      }
+
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+
+      // Add ellipsis if needed
+      if (currentPage < totalPages - 2) {
+        pages.push('...');
+      }
+
+      // Add last page
+      pages.push(totalPages);
+    }
+
+    return pages;
+  }, [currentPage, totalPages]);
+
+  return (
+    <Flex justifyContent="space-between" alignItems="center" mt={4}>
+      <Button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+      >
+        Previous
+      </Button>
+
+      <Flex>
+        {pageNumbers.map((page, index) => (
+          <Button
+            key={index}
+            onClick={() => typeof page === 'number' ? onPageChange(page) : undefined}
+            disabled={typeof page !== 'number'}
+            colorScheme={typeof page === 'number' && page === currentPage ? 'blue' : undefined}
+            variant={typeof page === 'number' && page === currentPage ? 'solid' : 'ghost'}
+          >
+            {page}
+          </Button>
+        ))}
+      </Flex>
+
+      <Button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+      >
+        Next
+      </Button>
+    </Flex>
+  );
+};
+
 const DEFAULT_ITEMS_PER_PAGE = 4
 const MAX_MENU_ITEMS_PER_PAGE = 20;
 
-// Cafeteria list component
 const CafeteriaList = React.memo(
   ({
     selectedCafeteria,
@@ -288,11 +377,13 @@ const CafeteriaList = React.memo(
     onUserRatingChange: (storeId: string, newRating: number) => void;
     clientFingerprint: string;
   }) => {
-    const [currentPage, setCurrentPage] = useState(1)
+    const [currentPage, setCurrentPage] = useAtom(cafeteriaListCurrentPage);
     const onUserRatingChange = useCallback(onUserRatingChangeProp, []);
     const filters = useAtomValue(filtersAtom);
 
-    const doPaginationOnMenuCount = useFeatureFlagEnabled('pagination-based-on-menu-count')
+    const doPaginationOnMenuCount = useFeatureFlagEnabled(
+      'pagination-based-on-menu-count',
+    );
 
     // Memoize menu item filtering
     // Instead of multiple filters:
@@ -305,11 +396,19 @@ const CafeteriaList = React.memo(
           return acc; // Skip this canteen
         }
 
-        if (filters.withAircon && !filters.noAircon && !canteen.withAirConditioning) {
+        if (
+          filters.withAircon &&
+          !filters.noAircon &&
+          !canteen.withAirConditioning
+        ) {
           return acc;
         }
 
-        if (!filters.withAircon && filters.noAircon && canteen.withAirConditioning) {
+        if (
+          !filters.withAircon &&
+          filters.noAircon &&
+          canteen.withAirConditioning
+        ) {
           return acc;
         }
 
@@ -328,33 +427,33 @@ const CafeteriaList = React.memo(
             // Sub-category filter (hardcoded mapping)
             let includeItem = false; // Flag to track if the item should be included
 
-            if (menu.category === "food") {
+            if (menu.category === 'food') {
               switch (menu.sub_category) {
-                case "noodles":
+                case 'noodles':
                   includeItem = filters.noodles;
                   break;
-                case "soup_curry":
+                case 'soup_curry':
                   includeItem = filters.soup_curry;
                   break;
-                case "chicken_rice":
+                case 'chicken_rice':
                   includeItem = filters.chicken_rice;
                   break;
-                case "rice_curry":
+                case 'rice_curry':
                   includeItem = filters.rice_curry;
                   break;
-                case "somtum_northeastern":
+                case 'somtum_northeastern':
                   includeItem = filters.somtum_northeastern;
                   break;
-                case "steak":
+                case 'steak':
                   includeItem = filters.steak;
                   break;
-                case "japanese":
+                case 'japanese':
                   includeItem = filters.japanese;
                   break;
                 default:
                   includeItem = filters.others; // If not a specific sub-category, check "others"
               }
-            } else if (menu.category === "DRINK") {
+            } else if (menu.category === 'DRINK') {
               // You can add similar logic for drink sub-categories here
               // if you want to filter drinks in the future.
               // For now, we will not filter drinks based on filters except price.
@@ -397,11 +496,11 @@ const CafeteriaList = React.memo(
 
         return [...acc, { ...canteen, stores: stores }];
       }, []);
-    }, [canteens, selectedCafeteria, filters, clientFingerprint, priceRange])
+    }, [canteens, selectedCafeteria, filters, clientFingerprint, priceRange]);
 
     useEffect(() => {
-      setCurrentPage(1)
-    }, [filteredCanteens])
+      setCurrentPage(1);
+    }, [filteredCanteens]);
 
     let items_per_page = DEFAULT_ITEMS_PER_PAGE;
 
@@ -459,17 +558,14 @@ const CafeteriaList = React.memo(
       }
     }, [filteredCanteens, currentPage, doPaginationOnMenuCount]);
 
-    const handlePreviousPage = () => {
-      setCurrentPage((prevPage) => Math.max(prevPage - 1, 1)); // Prevent going below page 1
-    };
+    const handlePageChange = useCallback((page: number) => {
+      setCurrentPage(page);
+    }, [setCurrentPage]);
 
-    const handleNextPage = () => {
-      setCurrentPage((prevPage) => Math.min(prevPage + 1, totalPages)); // Prevent going beyond totalPages
-    };
 
     useEffect(() => {
-      scroll.scrollToTop()
-    }, [currentPage])
+      scroll.scrollToTop();
+    }, [currentPage]);
 
     return (
       <div>
@@ -484,20 +580,11 @@ const CafeteriaList = React.memo(
         </Grid>
 
         {/* Pagination controls */}
-        <Flex justifyContent="space-between" alignItems='center' mt={4}>
-          <Button onClick={handlePreviousPage} disabled={currentPage === 1}>
-            Previous
-          </Button>
-          <Text>
-            Page {currentPage} of {totalPages}
-          </Text>
-          <Button
-            onClick={handleNextPage}
-            disabled={currentPage === totalPages}
-          >
-            Next
-          </Button>
-        </Flex>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
       </div>
     );
   },
