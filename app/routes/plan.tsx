@@ -326,6 +326,15 @@ function selectRandomStores(
 
     let canteenSelectedForFood: string;
 
+    if (foodStores.length === 0) {
+      selectedStores.push({
+        meal: mealInfo,
+        foodStore: undefined,
+        drinkStore: undefined, // This will handle scenarios where a drink store is not found
+      });
+      continue
+    }
+
     // Select food store
     let foodStoreSeedOffset = 0;
     let pickedFoodStore: stores | undefined;
@@ -588,29 +597,38 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     }
   }
 
-  if (!haveFood) {
-    return {
-      selectedMenu: [],
-      budgetUsed: 0,
-      totalPlannedBudgets
-    }
-  }
+  // No need to do filtering here anymore.  We handle null foodStores later.
 
-  // assign canteen name to each store
+  // assign canteen name to each store, handling potentially undefined foodStore
   selectedStoresForEachMeal.forEach((mealStore) => {
-    const { foodStore } = mealStore;
-    const canteen = filteredCanteens.find(
-      (canteen) => canteen.id === foodStore.canteenId,
-    );
-    mealStore.canteenName = canteen?.name;
+    if (mealStore.foodStore) { // Check if foodStore exists
+      const canteen = filteredCanteens.find(
+        (canteen) => canteen.id === mealStore.foodStore.canteenId,
+      );
+      mealStore.canteenName = canteen?.name;
+    } else {
+      mealStore.canteenName = null; // Or some other default value
+    }
   });
 
   const usedMeals = new Set<string>();
   const usedDrinks = new Set<string>();
 
-  // Build the deterministic menu plan as before
+  // Build the deterministic menu plan, handling potentially null foodStore and drinkStore
   const selectedMenu = selectedStoresForEachMeal.map((mealStore) => {
     const { meal, foodStore, drinkStore, canteenName } = mealStore;
+
+    // Handle cases where foodStore is null
+    if (!foodStore) {
+      return {
+        meal,
+        canteenName: null, // Or a default canteen name
+        store: null,
+        pickedMeal: null,
+        drinkMenu: null,
+        drinkStore: null,
+      };
+    }
 
     const drinkOptions = drinkStore
       ? drinkStore.menu.filter(
@@ -668,9 +686,10 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
   // Calculate total cost for the deterministic plan (food + drink prices)
   const deterministicTotal = selectedMenu.reduce((sum, meal) => {
-    return (
-      sum + (meal.pickedMeal?.price ? meal.pickedMeal.price : 0 + (meal.drinkMenu?.price ? meal.drinkMenu.price : 0))
-    );
+    // Handle potentially null pickedMeal and drinkMenu
+    const mealPrice = meal.pickedMeal?.price || 0;
+    const drinkPrice = meal.drinkMenu?.price || 0;
+    return sum + mealPrice + drinkPrice;
   }, 0);
 
   // If the deterministic plan is within budget, return it…
@@ -685,6 +704,19 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   // Otherwise, build a fallback plan that uses the cheapest options available.
   const fallbackMenu = selectedStoresForEachMeal.map((mealStore) => {
     const { meal, foodStore, drinkStore, canteenName } = mealStore;
+
+    // Handle cases where foodStore is null in the fallback plan
+    if (!foodStore) {
+      return {
+        meal,
+        canteenName: null, // Or a default canteen name
+        store: null,
+        pickedMeal: null,
+        drinkMenu: null,
+        drinkStore: null,
+      };
+    }
+
     const drinkOptions = drinkStore
       ? drinkStore.menu.filter(
         (menu) =>
@@ -733,9 +765,10 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
   });
 
   const fallbackTotal = fallbackMenu.reduce((sum, meal) => {
-    return (
-      sum + (meal.pickedMeal ? meal.pickedMeal.price : 0) + ((meal.drinkMenu) ? meal.drinkMenu.price : 0)
-    );
+    // Handle potentially null pickedMeal and drinkMenu
+    const mealPrice = meal.pickedMeal?.price || 0;
+    const drinkPrice = meal.drinkMenu?.price || 0;
+    return sum + mealPrice + drinkPrice;
   }, 0);
 
   return {
