@@ -420,8 +420,8 @@ const CafeteriaList = React.memo(
     const clientHMACFingerprint = useAtomValue(clientHMACFingerprintAtom);
     const clientFingerprint = clientHMACFingerprint.split(":")[0];
 
-    //    const doPaginationOnMenuCount = useFeatureFlagEnabled('pagination-based-on-menu-count')
-    const doPaginationOnMenuCount = true
+    const doPaginationOnMenuCount = useFeatureFlagEnabled('pagination-based-on-menu-count')
+    //    const doPaginationOnMenuCount = true
 
     /**
      * 1. Filter and transform canteens  
