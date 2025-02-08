@@ -177,7 +177,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     if (firstTime && hmacFetcher.state === "idle") {
       if (hmacFetcher.data) {
         const hmac = hmacFetcher.data.hmac as string;
-        setCookie("nomnom", hmac, { path: "/", sameSite: "strict" });
+        setCookie("nomnom", hmac, { path: "/", sameSite: "strict", maxAge: 31536000 });
         setFirstTime(false);
       }
     }
