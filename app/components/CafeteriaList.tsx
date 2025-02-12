@@ -233,14 +233,15 @@ const CanteenItem = React.memo(
     }, [useNewCardLayout]);
 
     // Filter out stores that have no menu items.
-    const filteredStores = useMemo(() => {
-      return canteen.stores.filter(
-        (store) => store.menu && store.menu.length > 0
-      );
+    const sortedFilteredStores = useMemo(() => {
+      return canteen.stores
+        .filter((store) => store.menu && store.menu.length > 0)
+        .sort((a, b) => a.menu.length - b.menu.length); // Ascending order
     }, [canteen.stores]);
 
+
     // If no stores to render, hide the canteen entirely.
-    if (filteredStores.length === 0) {
+    if (sortedFilteredStores.length === 0) {
       return null;
     }
 
@@ -264,7 +265,7 @@ const CanteenItem = React.memo(
               </Text>
             </Card.Title>
             <Grid gap={4} templateColumns={gridTemplateColumns}>
-              {filteredStores.map((store) => (
+              {sortedFilteredStores.map((store) => (
                 <StoreItem
                   key={store.id}
                   store={store}
