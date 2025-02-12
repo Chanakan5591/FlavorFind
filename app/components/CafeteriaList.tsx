@@ -150,7 +150,7 @@ const StoreItem: React.FC<StoreItemProps> = React.memo(
         <Card.Root width="full" bg="#E0F2E9">
           <Card.Body gap="2">
             <Card.Title mt="2" display="flex" justifyContent="space-between">
-              <Text>{store.name}</Text>
+              <Text as='span' width='fit-content' maxWidth={24} sm={{ maxWidth: 'unset' }}>{store.name}</Text>
               <Box>
                 <Text as='span' fontSize='sm' fontWeight='normal' mr={1}>({ratingCount})</Text>
                 <ReviewStars

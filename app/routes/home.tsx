@@ -42,7 +42,6 @@ import { useAtom } from "jotai";
 import { Checkbox } from "~/components/ui/checkbox";
 import { selectedCanteensAtom, priceRangeAtom, filtersAtom, clientHMACFingerprintAtom } from "~/stores";
 import { NumberInputField } from "~/components/ui/number-input";
-import { atomWithStorage } from "jotai/utils";
 
 export function meta({ }: Route.MetaArgs) {
   return [
